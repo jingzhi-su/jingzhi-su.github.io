@@ -1,0 +1,938 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  td {
+    border: 2px solid #42404049;
+    border-radius: 15px;
+    padding: 2%;
+  }
+  th {
+  padding: 2%;
+  }
+</style>
+<title>CS 180 Project 2</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+    <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
+    <h2 align="middle">Project 2: Fun with Filters and Frequencies</h1>
+    <h2 align="middle">Stephen Su</h2>
+    <div style="margin-top: 5%; margin-bottom: 5%">
+        <h2 align="middle">Project Overview</h2>
+        <p>
+            This project builds intuition on how to manipulate images through 2D convolutions as well as learn more about filtering images. We also dive deeper into using image manipulation techniques such as Laplacian and Gaussian stacks.
+        </p>
+    </div>
+    <div style="margin-bottom: 5%">
+        <h2 align="middle">Part 1.1 Finite Difference Operators</h2>
+        <p>
+            Here, we are using finite difference operators, mainly Dx and Dy, to find partial derivatives of images. Dx is defined as the row vector [1, -1], where as Dy is defined as the column vector [[1], [-1]]. We can convolve our image with our finite 
+            difference operators to find vertical edges from the Dx operator, and horizontal edges from the Dy operator. Afterwards, using our convolved images, we can produce a gradient magnitude image by square rooting the sum of the squares of the partial 
+            derivatives of our image, or more formally sqrt(dx^2 + dy^2), where dx and dy are the results from convolving our image with our finite difference operators. Then, to get an edge image, we binarize the gradient magnitude image using a threshold of
+            70.
+        </p>
+        <table style="margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/1.1/cameraman.png" alt="" width="100%" align="middle">
+                        <p align="middle">cameraman.jpg</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table style="width: 100%; margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/1.1/cameraman_dx.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Dx Convolution</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.1/cameraman_dy.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Dy Convolution</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/1.1/cameraman_gradient_mag.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gradient Magnitude</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.1/cameraman_gradient_mag_threshold.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gradient Magnitude Binarized with 70</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-bottom: 5%">
+        <h2 align="middle">Part 1.2 Derivative of Gaussian (DoG) Filters</h2>
+        <p>
+            Because the results from using the finite difference operators were noisy, we decided to instead apply a gaussian filter to smooth out the edges. This allows us to better remove noise from the image before applying our finite difference operators.
+            For the gaussian filter, we chose a kernel size = 10, and sigma = 6. After applying the gaussian filter, we can proceed with the same techniques from before. The results are as follows:
+        </p>
+        <table style="width: 100%; margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/1.1/cameraman.png" alt="" width="100%" align="middle">
+                        <p align="middle">cameraman.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.2/cameraman_convolved_gaussian.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gaussian filter with ksize=10 and sigma=6</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/1.2/cameraman_convolved_dx.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Dx Convolution</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.2/cameraman_convolved_dy.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Dy Convolution</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/1.2/cameraman_convolved_grad_mag.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gradient Magnitude</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.2/cameraman_convolved_grad_mag_threshold.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gradient Magnitude Binarized with 10</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Compared to the binarized gradient magnitude image from before, the gradient magnitude image here is more pronounced and more noticeable. The edges appear thicker, allowing them to stand out more. We also see less noise from the background, becuase 
+            the gaussian filter acts as a low pass filter that filters out the high frequencies.
+        </p>
+        <p>
+            Because convolutions are commutative and associative, we can create derivative of gaussian filters to speed up our computations. Specifically, we can first apply our finite difference operator onto our gaussian filter first to get our Derivative of 
+            Gaussian filters DoGx and DoGy, and then convolve our original image with the DoGx and DoGy filters to get our partial derivatives.
+        </p>
+        <table style="width: 100%; margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/1.2/cameraman_DoGx.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">DoGx Convolution</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.2/cameraman_DoGy.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">DoGy Convolution</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/1.2/cameraman_grad_mag_DoG.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gradient Magnitude</p>
+                    </td>
+                    <td>
+                        <img src="./out/1.2/cameraman_grad_mag_DoG_threshold.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Gradient Magnitude Binarized with 10</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Ignoring a tiny bit of noise, the results are identical after binarizing the gradient magnitude image. This is expected, since convolutions are commutative and associative.
+        </p>
+    </div>
+    <div style="margin-top: 5%">
+        <h2 align="middle">Part 2.1  Image "Sharpening"</h2>
+        <p>
+            Here, we sharpen images by adding higher frequencies by deriving the unsharp masking techniques. It starts off by convolving our unsharp image with a gaussian filter to generate a blurred version of the image. Since the gaussian filter acts as a low
+            pass filter, the blurred image contains only the low frequencies of the original image. To get the high frequencies of an image, we subtract the original image by the blurred image to get the high frequencies of an image. Afterwards, we can add 
+            however many high frequencies to our original image to make the original image appear sharper. The following results are used with a gaussian filter with kernel size = 13 and sigma = 2. We use alpha to denote how much of our high frequency to add.
+        </p>
+        <table style="width: 100%; margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/2.1/taj.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">taj.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/taj_low_freq.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Blurred from Gaussian filter</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/taj_high_freq.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">High frequencies</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.1/taj_sharpened_1.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Sharpened with α = 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/taj_sharpened_5.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Sharpened with α = 5</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/taj_sharpened_10.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Sharpened with α = 10</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The same technique is applied to an image of the pyramids of Giza.
+        </p>
+        <table style="width: 100%; margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/2.1/giza.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">giza.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/giza_low_freq.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Blurred</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.1/giza_high_freq.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">High frequencies</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/giza_sharpened.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Sharpened with α = 2</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Here, we apply this technique to an image of the salesforce tower in San Francisco. We first apply a gaussian blur to the image, and then attempt to sharpen the blurred image to get back the original image, instead of just sharpening the original image.
+        </p>
+        <table style="width: 100%; margin-left: auto; margin-right: auto">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/2.1/salesforce.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">salesforce.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/salesforce_low_freq.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Blurred image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.1/salesforce_high_freq.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">High frequencies of blurred image</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.1/salesforce_sharpened.jpg" alt="" width="100%" align="middle">
+                        <p align="middle">Blurred image sharpened with α = 3</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <h2 align="middle">Part 2.2  Hybrid Images</h2>
+        <p>
+           In this next part, we attempt to generate hybrid images from two separate images by combining the high frequencies of one image with the low frequencies of the other image. Because high frequencies dominate at a close viewing distance, and low frequencies 
+           dominate at a farther viewing distance, we can combine the high and low frequencies from each respective image into one image to create an effect where we see one image from close up and another image from far away. To get the low frequencies of an image, 
+           we apply a gaussian filter to the image. To get the high frequencies of an image, we first apply a gaussian filter, and then subtract the original image from the gaussian filtered image to get the high frequencies. Here are the results:
+        </p>
+        <div style="margin-top: 3%; margin-bottom: 3%;">
+            <h3>Example 1</h3>
+            <table style="width: 100%; margin-left: auto; margin-right: auto">
+                <tbody>
+                    <tr>
+                        <td>
+                            <img src="./out/2.2/DerekPicture.jpg" alt="" width="100%" align="middle">
+                            <p align="middle">DerekPicture.jpg</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.2/nutmeg.jpg" alt="" width="100%" align="middle">
+                            <p align="middle">nutmeg.jpg</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.2/nutmeg_derek.jpg" alt="" width="100%" align="middle">
+                            <p align="middle">Hybrid</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 3%; margin-bottom: 3%;">
+            <h3>Example 2</h3>
+            <p>In this example, I created a hybrid image of my friend Raj with Derrick White, a famous basketball player on the Boston Celtics.</p>
+            <table style="width: 100%; margin-left: auto; margin-right: auto">
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.2/raj.jpg" alt="" width="50%">
+                            <p align="middle">Raj</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.2/raj.jpg" alt="" width="100%">
+                            <p align="middle">Raj high frequency</p>
+                        </td>
+                    </tr>
+                    <tr>                 
+                        <td align="center">
+                            <img src="./out/2.2/dwhite.jpg" alt="" width="75%">
+                            <p align="middle">Derrick White</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.2/dwhite_low_freq.jpg" alt="" width="100%">
+                            <p align="middle">Derrick White low frequency</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table style=" margin-left: auto; margin-right: auto; margin-bottom: 3%;">
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.2/raj_derrick.jpg" alt="" width="100%">
+                            <p align="middle">Hybrid</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>I also displayed the process of creating the image through frequency analysis. Below are the log magnitude of the fourier transform of the two input images, filtered images, and the final hybrid image:</p>
+            <table style="margin-left: auto; margin-right: auto;">
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.2/fft_raj.jpg" alt="" width="100%">
+                            <p align="middle">Raj FFT</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.2/fft_raj_high.jpg" alt="" width="100%">
+                            <p align="middle">Raj high frequency FFT</p>
+                        </td>
+                    </tr>
+                    <tr>                 
+                        <td align="center">
+                            <img src="./out/2.2/fft_dwhite.jpg" alt="" width="100%">
+                            <p align="middle">Derrick White</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.2/fft_dwhite_low.jpg" alt="" width="100%">
+                            <p align="middle">Derrick White low frequency FFT</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table style="margin-left: auto; margin-right: auto">
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.2/fft.jpg" alt="" width="100%">
+                            <p align="middle">Hybrid FFT</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 3%; margin-bottom: 3%;">
+            <h3>Example 3</h3>
+            <p>In this example, I combined two of my favorite characters from Oshi No Ko: Aqua and Ruby.</p>
+            <table style="margin-left: auto; margin-right: auto;">
+                <tbody>
+                    <tr>
+                        <td>
+                            <img src="./out/2.2/aqua.jpg" alt="" width="100%">
+                            <p align="middle">aqua.jpg</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.2/ruby.jpg" alt="" width="100%">
+                            <p align="middle">ruby.jpg</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.2/aqua_ruby.jpg" alt="" width="100%">
+                            <p align="middle">Hybrid</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 3%; margin-bottom: 3%;">
+            <h3>Example 4 (Failure)</h3>
+            <p>In this example, I combined a picture of a boulder I found in Lake Tahoe with the Moyai emoji 🗿. The results didn't turn out too well, mainly because of how difficult it was to align the boulder with the moyai emoji.</p>
+            <table style="margin-left: auto; margin-right: auto;">
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.2/rock_downsampled.jpg" alt="" width="75%">
+                            <p align="middle">rock.jpg</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.2/moyai_flipped.jpg" alt="" width="75%">
+                            <p align="middle">moyai.jpg</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.2/moyai_rock.jpg" alt="" width="100%">
+                            <p align="middle">Hybrid</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div>
+        <h2 align="middle">Part 2.3 Gaussian and Laplacian Stacks</h2>
+        <p>
+            Here, I generated the gaussian and laplacian stacks for images. These stacks are used for multi-resolution blending later on. The goal of this process is to be able to seamlessly blend two images together using a mask.
+        </p>
+        <p>
+            To generate the gaussian stack, we first start with the original image and apply a gaussian filter. Here, we used a kernel size = 21 and a sigma = 7. Then, we apply the another gaussian filter on top of the result from the previous level. The process
+            repeats for 5 levels, resulting in a decreasing frequency band at each level.  
+        </p>
+        <p>
+            To generate the laplacian stack, we took each pair of consecutive images from the gaussian stack and subtracting them together to get the high frequencies. The last image of the laplacian stack is the same image as the last image of the gaussian stack. 
+            The laplacian stack provides a useful property in that collapsing the stack will give us the original image back.
+        </p>
+        <table width="100%" style="margin-top: 3%; margin-bottom: 3%;">
+            <tbody>
+                <tr>
+                    <th align="middle" style="width:50%">Gaussian Stack for Apple</th>
+                    <th align="middle" style="width:50%">Laplacian Stack for Apple</th>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/apple_gaussian_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/apple_laplacian_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/apple_gaussian_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/apple_laplacian_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/apple_gaussian_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/apple_laplacian_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/apple_gaussian_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/apple_laplacian_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/apple_gaussian_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/apple_laplacian_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%" style="margin-top: 3%; margin-bottom: 3%;">
+            <tbody>
+                <tr>
+                    <th align="middle" style="width:50%">Gaussian Stack for Orange</th>
+                    <th align="middle" style="width:50%">Laplacian Stack for Orange</th>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.3/orange_gaussian_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/orange_laplacian_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/orange_gaussian_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/orange_laplacian_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/orange_gaussian_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/orange_laplacian_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/orange_gaussian_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/orange_laplacian_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.3/orange_gaussian_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                    <td align="center">
+                        <img src="./out/2.3/orange_laplacian_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            To blend the two images, we need a binary gaussian stack for the corresponding mask, using the same technique described before by applying the gaussian filter to the mask. Then, we can apply the binary gaussian stack to each laplacian stack by 
+            multiplying the corresponding images together. As a side note, we cannot apply the same gaussian stack to both images, so one of the gaussian stacks is built from flipping the mask and then applying the mask gaussian stack to the laplacian stack. 
+        </p>
+        <table width="100%" style="margin-top: 3%; margin-bottom: 3%;">
+            <tbody>
+                <tr>
+                    <th align="center">Apple + Mask</th>
+                    <th align="center">Orange + Mask</th>
+                    <th align="center">Blended Stack</th>
+                </tr>
+
+                <tr>
+                    <td>
+                        <img src="./out/2.3/apple_mask_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/orange_mask_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/apple_orange_level_1.jpg" alt="" width="100%">
+                        <p align="middle">Level 1</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.3/apple_mask_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/orange_mask_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/apple_orange_level_2.jpg" alt="" width="100%">
+                        <p align="middle">Level 2</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.3/apple_mask_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/orange_mask_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/apple_orange_level_3.jpg" alt="" width="100%">
+                        <p align="middle">Level 3</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.3/apple_mask_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/orange_mask_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/apple_orange_level_4.jpg" alt="" width="100%">
+                        <p align="middle">Level 4</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/2.3/apple_mask_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/orange_mask_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                    <td>
+                        <img src="./out/2.3/apple_orange_level_5.jpg" alt="" width="100%">
+                        <p align="middle">Level 5</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <h2 align="middle">Part 2.4 Multiresolution Blending</h2>
+        <div>
+            <h3>Example 1</h3>
+            <p>Here is the result if we were to collapse the blended laplacian stack from the previous section.</p>
+            <table style="margin-top: 3%; margin-bottom: 3%; margin-left: auto; margin-right: auto;">
+                <tr>
+                    <td>
+                        <img src="./out/2.3/orapple.jpg" alt="" width="100%">
+                        <p align="middle">The Orapple</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <h3>Example 2</h3>
+            <p>I blended together an image of a beach from Key Largo, Florida with an image of Mount Fuji in Japan.</p>
+            <table width="100%" style="margin-top: 3%; margin-bottom: 3%;">
+                <tbody>
+                    <tr>
+                        <th align="middle" style="width:50%">Gaussian Stack for Beach</th>
+                        <th align="middle" style="width:50%">Laplacian Stack for Beach</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/beach_gaussian_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/beach_laplacian_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/beach_gaussian_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/beach_laplacian_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/beach_gaussian_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/beach_laplacian_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/beach_gaussian_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/beach_laplacian_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/beach_gaussian_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/beach_laplacian_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table width="100%" style="margin-top: 3%; margin-bottom: 3%;">
+                <tbody>
+                    <tr>
+                        <th align="middle" style="width:50%">Gaussian Stack for Mount Fuji</th>
+                        <th align="middle" style="width:50%">Laplacian Stack for Mount Fuji</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/fuji_gaussian_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_laplacian_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_gaussian_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_laplacian_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_gaussian_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_laplacian_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_gaussian_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_laplacian_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_gaussian_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_laplacian_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>
+                I used a horizontal mask this time instead of a vertical mask. Here are the results:
+            </p>
+            <table>
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_beach_mask_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_beach_mask_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_beach_mask_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_beach_mask_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/fuji_beach_mask_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Here are the blended images from applying the mask to each of the laplacian stacks, using the same techniques as before.</p>
+            <table width="100%" style="margin-top: 3%; margin-bottom: 3%;">
+                <tbody>
+                    <tr>
+                        <th align="center">Beach + Mask</th>
+                        <th align="center">Fuji + Mask</th>
+                        <th align="center">Blended Stack</th>
+                    </tr>
+    
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/beach_mask_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_mask_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_beach_level_1.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/beach_mask_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_mask_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_beach_level_2.jpg" alt="" width="100%">
+                            <p align="middle">Level 2</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/beach_mask_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_mask_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 3</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_beach_level_3.jpg" alt="" width="100%">
+                            <p align="middle">Level 1</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/beach_mask_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_mask_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_beach_level_4.jpg" alt="" width="100%">
+                            <p align="middle">Level 4</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="./out/2.4/beach_mask_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_mask_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                        <td>
+                            <img src="./out/2.4/fuji_beach_level_5.jpg" alt="" width="100%">
+                            <p align="middle">Level 5</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table style="margin-top: 3%; margin-bottom: 3%; margin-left: auto; margin-right: auto;">
+                <tr>
+                    <td>
+                        <img src="./out/2.4/fuji_beach.jpg" alt="" width="100%">
+                        <p align="middle">Seeing Mount Fuji at the Beach</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <h3>Example 3</h3>
+            <p>
+                My friend Diego loves to go to Mexico, so I used an irregular mask to blend him into a town in Mexico. To create the irregular mask, I used photoshop to mask out the area that I wanted to blend, and then applied the same blending technique.
+            </p>
+            <table>
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/diego.jpg" alt="" width="100%">
+                            <p align="middle">diego.jpg</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/mexico.jpg" alt="" width="100%">
+                            <p align="middle">mexico.jpg</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/diego_mask.jpg" alt="" width="100%">
+                            <p align="middle">Irregular mask</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table width="50%" style="margin-top: 3%; margin-bottom: 3%; margin-left: auto; margin-right: auto;">
+                <tr>
+                    <td align="center">
+                        <img src="./out/2.4/diego_mexico.jpg" alt="" width="100%">
+                        <p align="middle">Diego in Mexico!</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <h3>Example 4 (Failure)</h3>
+            <p>
+                During the 2024 NBA playoffs, fans often compared Anthony Edwards, a superstar on the Minnesota Timerbwolves, to Michael Jordan (from the Chicago Bulls, not from the Berkeley EECS Department). Some have even nicknamed Anthony Edwards to be 
+                "Michael Jordan's Son". I decided to blend together images of Anthony Edwards and Michael Jordan, but the results were not so great since the seam was noticeable.
+            </p>
+            <table>
+                <tbody>
+                    <tr>
+                        <td align="center">
+                            <img src="./out/2.4/ant.jpg" alt="" width="100%">
+                            <p align="middle">Anthony Edwards</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/jordan.jpg" alt="" width="100%">
+                            <p align="middle">Michael Jordan</p>
+                        </td>
+                        <td align="center">
+                            <img src="./out/2.4/jordant.jpg" alt="" width="100%">
+                            <p align="middle">Michael Jordan's Son</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div>
+        <h2 align="middle">Project Insights</h2>
+        <p>
+            I had fun learning about how frequency worked on different images, as well as manipulating the different frequencies to create images of my own. I also learned alot about the different ways I can take advantage of the gaussian filters to create 
+            new effects. 
+        </p>
+    </div>
+    <div>
+        <h2 align="middle">Citation</h2>
+        <p>
+            Website template is credited to CS 184
+        </p>
+    </div>
+</body>

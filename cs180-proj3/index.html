@@ -1,0 +1,477 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1200px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  h2 {
+    text-align: center;
+  }
+  table {
+    width: 100%; 
+    margin-left: auto; 
+    margin-right: auto;
+    margin-top: 3%; 
+    margin-bottom: 3%;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+  }
+  table {
+    table-layout: fixed;
+  }
+  td {
+    border: 2px solid #42404049;
+    border-radius: 15px;
+    padding: 2%;
+    vertical-align: middle;
+    & p {
+        text-align: center;
+        padding-top: 10px;
+    }
+  }
+  th {
+  padding: 2%;
+  text-align: center;
+  width:50%;
+  }
+</style>
+<title>CS 180 Project 3</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+    <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
+    <h2>Project 3: Face Morphing</h1>
+    <h2>Stephen Su</h2>
+    <div style="margin-top: 5%; margin-bottom: 5%">
+        <h2>Project Overview</h2>
+        <p>
+            In this project, we produce a morph animation of my face into someone else's face, compute the mean face of a population, and extrapolate from the population to create a caricature of myself. This project requires us to delve deeper into image 
+            manipulation through the use of warping and cross-dissolving images, as well as image transformation through triangulation.
+        </p>
+    </div>
+    <div style="margin-top: 5%; margin-bottom: 5%">
+        <h2>Part 1: Defining Correspondences</h2>
+        <p>
+            We start off by choosing two images to create a morph animation. For the two images, I chose a passport-like photo of me taken by my friend Justin Wu earlier this year, and I want to be able to morph into the famous basketball player Yao Ming. 
+            Below are the two photos that I will be using for the rest of the project. To makes things simplier, I cropped both photos to have a 700 pixel by 700 pixel resolution, and removed the background of both photos.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me.jpg" alt="">
+                        <p>Me</p>
+                    </td>
+                    <td>
+                        <img src="./out/yao.jpg" alt="">
+                        <p>Yao Ming, Houston Rockets</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Next, I used this <a href="https://cal-cs180.github.io/fa23/hw/proj3/tool.html">tool</a> to define correspondence points for each image. Correspondence points highlight key features of the face, such as the eyes, nose, mouth, chin, ears, and other 
+            distinct features. These points are then used to create a triangulation for each image that will be used for morphing. Here, I used a Delauney triangulation for both photos. 
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_tri.jpg" alt="">
+                        <p>My Triangulation</p>
+                    </td>
+                    <td>
+                        <img src="./out/yao_tri.jpg" alt="">
+                        <p>Yao Ming Triangulation</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top: 5%; margin-bottom: 5%">
+        <h2>Part 2: Computing the "Mid-Way Face"</h2>
+        <p>
+            Before computing the morph sequence, I need to compute the mid-way face between both photos. This involves computing the average shape of both faces, warping both faces into the shape, and averaging the colors together. To compute the average shape, 
+            I averaged each of the keypoint locations in the two photos, and then created a triangulation on top of the averaged points. Below is an image of the average face.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me.jpg" alt="">
+                        <p>Me</p>
+                    </td>
+                    <td>
+                        <img src="./out/avg_tri.jpg" alt="">
+                        <p>Mid-way Shape</p>
+                    </td>
+                    <td>
+                        <img src="./out/yao.jpg" alt="">
+                        <p>Yao Ming</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_avg_tri.jpg" alt="">
+                        <p>Mid-way Shape on me</p>
+                    </td>
+                    <td>
+                        <img src="./out/yao_avg_tri.jpg" alt="">
+                        <p>Mid-way Shape on Yao Ming</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            To warp a face into the average shape, I warped each triangle in the in the original shape to the corresponding triangle in the Mid-way shape, using an affine transformation matrix that transforms the each point in the original triangle to each point 
+            in the target triangle. In order to bulk apply this operation in all points within a triangle, I used skimage's polygon function to generate a triangular mask of all points. Then, I used an inverse warp in the on the target triangle to find what each 
+            pixel value should be. Inverse warping is the idea of finding a target pixel's value from pixels in the original image. A pixel in our target may map to a spot in between pixels in our original image. In that case, we use nearest neighbor to sample 
+            the color. Below are images of my face warped onto the average shape, as well as Yao Ming's face warped into the average shape.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_avg_warped.jpg" alt="">
+                        <p>My face warped to average geometry</p>
+                    </td>
+                    <td>
+                        <img src="./out/yao_avg_warped.jpg" alt="">
+                        <p>Yao Ming's face warped to average geometry</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_yao_avg_warped.jpg" alt="" width="355" height="355">
+                        <p>Mid-way face of me and Yao Ming</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <h2>Part 3: The Morph sequence</h2>
+        <p>
+            Here, I wrote a function to produce a .GIF file that morphs my face into Yao Ming's face in 45 frames. The ideas here build heavily from Part 2. In Part 2, we used an average between the two shapes and faces. However, to produce a morph, we need to 
+            leverage a weighted average between the two shapes and faces. Here's what the morph looks like.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_yao.gif" alt="">
+                        <p>I morphed into Yao Ming</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <h2>Part 4: The "Mean Face" of a Population</h2>
+        <p>
+            In this part, I worked with a dataset of annotated faces. More specifically, I used the <a href="https://web.archive.org/web/20210305094647/http://www2.imm.dtu.dk/~aam/datasets/datasets.html">Danes dataset</a>, which already provides annotations for 
+            different faces. The goal here is to produce the average face shape of the whole population, morph each face into the average shape using the technqiues from the previous parts, and then compute the average face. Below is an image of what the average 
+            face shape is.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/average_shape.jpg" alt="">
+                        <p>Average face shape of population</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            I morphed some of the faces in the dataset to the average shape. Here are some examples for comparison.
+        </p>
+        <table style="width: 75%">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/male_1.jpg" alt="">
+                        <p>Male 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/male_1_warped.jpg" alt="">
+                        <p>Male 1 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/male_2.jpg" alt="">
+                        <p>Male 2</p>
+                    </td>
+                    <td>
+                        <img src="./out/male_2_warped.jpg" alt="">
+                        <p>Male 2 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/male_3.jpg" alt="">
+                        <p>Male 3</p>
+                    </td>
+                    <td>
+                        <img src="./out/male_3_warped.jpg" alt="">
+                        <p>Male 3 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/male_5.jpg" alt="">
+                        <p>Male 4</p>
+                    </td>
+                    <td>
+                        <img src="./out/male_5_warped.jpg" alt="">
+                        <p>Male 4 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/female_1.jpg" alt="">
+                        <p>Female 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/female_1_warped.jpg" alt="">
+                        <p>Female 1 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/female_2.jpg" alt="">
+                        <p>Female 2</p>
+                    </td>
+                    <td>
+                        <img src="./out/female_2_warped.jpg" alt="">
+                        <p>Female 2 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/female_3.jpg" alt="">
+                        <p>Female 3</p>
+                    </td>
+                    <td>
+                        <img src="./out/female_3_warped.jpg" alt="">
+                        <p>Female 3 Warped</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/female_4.jpg" alt="">
+                        <p>Female 4</p>
+                    </td>
+                    <td>
+                        <img src="./out/female_4_warped.jpg" alt="">
+                        <p>Female 4 Warped</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Lastly, I computed the average face of the entire population, and proceeded to warp my face into the average face, and vice versa as well. Here are the results.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/average_face.jpg" alt="">
+                        <p>Average Face</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_warped_to_average.jpg" alt="">
+                        <p>My face warped into average face</p>
+                    </td>
+                    <td>
+                        <img src="./out/average_warped_to_me.jpg" alt="">
+                        <p>Average face warped into my face</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The main feature that stands out here from my face to the average face is the face shape. My face is generally more square, where as the average face tends to be more rounded. When the average face warps into my face, the face takes up more of a square 
+            shape, where as when my face is warped into the average face, my face takes more of an oval shape. 
+        </p>
+    </div>
+    <div>
+        <h2>Part 5: Caricatures: Extrapolating from the mean</h2>
+        <p>
+            In this part, I produced a caticature of my face by extrapolating from the mean face from the previous step. Firstly, to make the caticature more accurate, I calculated the mean for just male faces instead of the entire population. The average male face 
+            looks as follows.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/male_average_face.jpg" alt="">
+                        <p>Average male face</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Next, to make the caricature, I subtracted the mean face from my face to find the difference. Then, I added the difference to my face. To make things more interesting, I scaled the difference by different amounts to see how my face would change.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_caricatures_01.jpg" alt="">
+                        <p>alpha = 0.1</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_caricatures_05.jpg" alt="">
+                        <p>alpha = 0.5</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/me_caricatures_075.jpg" alt="">
+                        <p>alpha = 0.75</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_caricatures_1.jpg" alt="">
+                        <p>alpha = 1</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            A general trend here is that as alpha increases, my eyebrows get raised higher, which makes sense since the data set contains faces with eyebrows larger than my eyebrows.
+        </p>
+    </div>
+    <div>
+        <h2>Bells and Whistles</h2>
+        <p>
+            For this section, I looked into changing the gender of how my face looked. I first started off by calculating the female average face from the Danes dataset.
+        </p>
+        <table style="width: 50%">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/female_average_face.jpg" alt="">
+                        <p>Average female face</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Then, I warped my face into the average female face hoping to bring out more female facial features into my face. I started off by warping just the shape, using a weighted average of my face's shape and the the average female face shape. Here, alpha is 
+            the weight of the female face.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_to_female_01_0.jpg" alt="">
+                        <p>alpha = 0.1</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_to_female_025_0.jpg" alt="">
+                        <p>alpha = 0.25</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/me_to_female_05_0.jpg" alt="">
+                        <p>alpha = 0.5</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_to_female_075_0.jpg" alt="">
+                        <p>alpha = 0.75</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Next, I warped just the appearance of the face, again using a weighted average, without warping the shape.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_to_female_0_01.jpg" alt="">
+                        <p>alpha = 0.1</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_to_female_0_025.jpg" alt="">
+                        <p>alpha = 0.25</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/me_to_female_0_05.jpg" alt="">
+                        <p>alpha = 0.5</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_to_female_0_075.jpg" alt="">
+                        <p>alpha = 0.75</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Lastly, I warped both the shape and the appearance using the same alpha.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/me_to_female_01_01.jpg" alt="">
+                        <p>alpha = 0.1</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_to_female_025_025.jpg" alt="">
+                        <p>alpha = 0.25</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/me_to_female_05_05.jpg" alt="">
+                        <p>alpha = 0.5</p>
+                    </td>
+                    <td>
+                        <img src="./out/me_to_female_075_075.jpg" alt="">
+                        <p>alpha = 0.75</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            As alpha increased, my face became more feminine. Moreover, I noticed that my skin became more refined, and there is overall less acne on my face. My eyes became more feminine, and my face shape is also more oval-like. Overall, the process went well.
+        </p>
+    </div>
+    <div>
+        <h2>Citation</h2>
+        <p>
+            Website template is credited to CS 184.
+        </p>
+        <p>
+            Link to the correspondence tool used to generate the correspondence points can be found <a href="https://cal-cs180.github.io/fa23/hw/proj3/tool.html">here</a>.
+        </p>
+        <p>
+            Link to the Danes dataset can be found <a href="https://web.archive.org/web/20210305094647/http://www2.imm.dtu.dk/~aam/datasets/datasets.html">here</a>.
+        </p>
+    </div>
+</body>

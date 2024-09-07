@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  td {
+    border: 2px solid #42404049;
+    border-radius: 15px;
+    padding: 2%;
+  }
+  th {
+  padding: 2%;
+  }
+</style>
+<title>CS 180 Project 1</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+    <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
+    <h2 align="middle">Project 1: Colorizing the Prokudin-Gorskii Photo Collection</h1>
+    <h2 align="middle">Stephen Su</h2>
+
+    <div style="margin-top: 5%;">
+        <h2 align="middle">Project Overview</h2>
+        <p>
+            Sergei Prokudin-Gorskii (1863-1944) was a Russian photographer, who in 1907, travelled across the Russian empire to take colored photographs. Even though there were no way to print color photography at that time, he was still able to capture color by 
+            recording three exposures of every scene onto a glass plate using red, green, and blue filters. This project aims to convert his RGB glass plate negatives into colored photos by using image processing techniques. 
+        </p>
+    </div>
+    <div>
+        <h2 align="middle">Approach</h2>
+        <p>
+            One of the key issues in this project was how to align each of the three color channels on top of each other. Simply stacking the three channels would often create blurry, unappealing images that are hard to look at. To counteract this effect, we can 
+            add some displacement along each channel. Using the blue channel as our base, we can align both the red and green channels to the blue channel. For low resolutions, we searched in a [-15, 15] window along both the x and y axis. To score each displacement,
+            we used the Normalized Cross Correlation (NCC) metric, which in terms of vectors is a dot product of two normalized vectors. However, because channels are represented as matrices, we adjust the metric to instead use the Hadamard product or 
+            element-wise product of two normalized matrices and then sum over all elements in the resulting product. To normalize a matrix, we divide each element by the forbenius norm of that matrix. Furthermore, to avoid fitting noise, we removed 5% from
+            the margins as to only score using the inner pixels. NCC is used such that a higher score between two channels indicates a higher similarity level. Thus, we take the displacement that generates the highest NCC score between two channels.
+        </p>
+        <p>
+            For higher resolutions (mainly .tif files), manually searching in a window for the best displacement becomes algorithmically inefficient and computationally expensive. To speed up the process of finding the best displacement for larger images, we can implement an Image 
+            Pyramid. Image Pyramids represent the image at multiple, smaller scales, often by factors of 2. At each level, we would scale the image down by a factor of 2 until the image is small enough. Once we have a low enough resolution, we manually search for 
+            the best displacement. Larger images would then take the resulting displacement from the smaller images, scale the displacement accordingly by a factor of 2, and perform another manual search using the results from the smaller image as our starting point. 
+            This process continues until we are able to work our way up to our original resolution image to generate the best displacement.
+        </p>
+    </div>
+    <div>
+        <h2 align="middle" style="margin-top: 5%;">Low Resolution Image Gallery</h2>
+        <table style="width: 100%; margin-bottom: 5%;">
+            <tbody>
+                <tr>
+                    <th align="middle" style="width:50%">Unaligned Images</th>
+                    <th align="middle" style="width:50%">Aligned Images</th>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/cathedral.jpg" alt="" width="100%">
+                        <p align="middle">cathedral.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/cathedral.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (12, 3), Green Offset (5, 2)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/monastery.jpg" alt="" width="100%">
+                        <p align="middle">monastery.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/monastery.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (3, 2), Green Offset (-3, 2)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/tobolsk.jpg" alt="" width="100%">
+                        <p align="middle">tobolsk.jpg</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/tobolsk.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (6, 3), Green Offset (3, 2)</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <h2 align="middle">High Resolution Image Gallery</h2>
+        <table style="width: 100%;margin-bottom: 5%;">
+            <tbody>
+                <tr>
+                    <th align="middle" style="width:50%">Unaligned Images</th>
+                    <th align="middle" style="width:50%">Aligned Images</th>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/church.jpg" alt="" width="100%">
+                        <p align="middle">church.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/church.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (58, -5), Green Offset (25, 3)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/emir.jpg" alt="" width="100%">
+                        <p align="middle">emir.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/emir.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (103, 43), Green Offset (49, 24)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/harvesters.jpg" alt="" width="100%">
+                        <p align="middle">harvesters.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/harvesters.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (124, 14), Green Offset (60, 16)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/icon.jpg" alt="" width="100%">
+                        <p align="middle">icon.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/icon.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (89, 23), Green Offset (40, 17)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/lady.jpg" alt="" width="100%">
+                        <p align="middle">lady.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/lady.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (110, 12), Green Offset (55, 8)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/melons.jpg" alt="" width="100%">
+                        <p align="middle">melons.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/melons.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (177, 11), Green Offset (82, 9)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/onion_church.jpg" alt="" width="100%">
+                        <p align="middle">onion_church.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/onion_church.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (108, 36), Green Offset (51, 26)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/sculpture.jpg" alt="" width="100%">
+                        <p align="middle">sculpture.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/sculpture.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (140, -26), Green Offset (33, -11)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/self_portrait.jpg" alt="" width="100%">
+                        <p align="middle">self_portrait.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/self_portrait.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (175, 34), Green Offset (79, 29)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/three_generations.jpg" alt="" width="100%">
+                        <p align="middle">three_generations.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/three_generations.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (112, 10), Green Offset (55, 13)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./assets/prev/train.jpg" alt="" width="100%">
+                        <p align="middle">train.tif</p>
+                    </td>
+                    <td>
+                        <img src="./assets/out/train.jpg" alt="" width="100%">
+                        <p align="middle">Red Offset (87, 32), Green Offset (42, 6)</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div>   
+            <h2 align="middle">Bells and Whistles</h2>
+            <p>
+                Although the algorithm was able to correctly align each of the images, the images still contained black, as well as colored borders on it's margins that make the photos difficult to look at. As a result, we implement automatic cropping as a feature to 
+                combat this issue. The algorithm works by first applying a Canny filter to the photo to get a black and white representation of the edges. Then, we manually search within the margins of the photo to look for any lines, and crop the margins if we were 
+                able to find any lines. The steps are as follows:
+            </p>
+            <ol>
+                <li>Apply a gaussian blur to the image, with sigma=3. Blurring the image removes any excess noise, as well as smooth out edges.</li>
+                <li>Reduce the image to grayscale. This is to simplify further computations.</li>
+                <li>Similar to how we implemented an Image Pyramid, represent the image at smaller scales, by repeatedly rescaling the image down by a factor of 2 until the image's length or width is within 300 pixels. Any cropping that we do on this smaller 
+                    image has to be scaled to the larger image.
+                </li>
+                <li>Compute a Canny filter over the downscaled image for edge detection. This will give the edges of the image in black and white.</li>
+                <li>Find the edges of the image along the top, bottom, left, and right margins of the image. To ensure that we are not excessively cropping, we only look within 10% of the image from the top, bottom, left, and right of the image</li>
+            </ol>
+            <p>Here is what the image looks like after each step of the algorithm on emir:</p>
+            <table style="width: 100%;margin-bottom: 5%;">
+                <tr>
+                    <td width="25%">
+                        <img src="./assets/ec/emir1.jpg" alt="" width="100%">
+                        <p align="middle">Gaussian Blur</p>
+                    </td>
+                    <td width="25%">
+                        <img src="./assets/ec/emir2.jpg" alt="" width="100%">
+                        <p align="middle">Black and White</p>
+                    </td>
+                    <td width="25%">
+                        <img src="./assets/ec/emir3.jpg" alt="" width="100%">
+                        <p align="middle">Downscale</p>
+                    </td>
+                    <td width="25%">
+                        <img src="./assets/ec/emir4.jpg" alt="" width="100%">
+                        <p align="middle">Canny Filter</p>
+                    </td>
+                </tr>
+            </table>
+            <p>
+                After applying the Canny filter, the main issue then becomes detecting the horizontal lines on the top and bottom margins, as well as the vertical lines on the left and right margins. Often, we run into situations where the borders detected by the Canny
+                filter are not straight. To counteract this problem, we instead look in a window for lines by performing a bitwise or. This ensures that even if the line is not purely straight, we are still able to detect the line. The threshold we set for us to 
+                consider cropping at that line is 0.75. This means that a line has to cover at least 75% of the image either vertically or horizontally for us to crop the line. Below are the results from cropping. We compare our automatic cropping with a default crop 
+                of 10% along the top, bottom, left, and right margins. 
+            </p>
+            <table style="width: 100%;margin-bottom: 5%;">
+                <tbody>
+                    <tr>
+                        <td width="50%">
+                            <img src="./assets/ec/emir_base.jpg" alt="" width="100%">
+                            <p align="middle">10% Cropping</p>
+                        </td>
+                        <td width="50%">
+                            <img src="./assets/ec/emir_crop.jpg" alt="" width="100%">
+                            <p align="middle">Automatic Cropping</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <img src="./assets/ec/icon_base.jpg" alt="" width="100%">
+                            <p align="middle">10% Cropping</p>
+                        </td>
+                        <td width="50%">
+                            <img src="./assets/ec/icon_crop.jpg" alt="" width="100%">
+                            <p align="middle">Automatic Cropping</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <img src="./assets/ec/sculpture_base.jpg" alt="" width="100%">
+                            <p align="middle">10% Cropping</p>
+                        </td>
+                        <td width="50%">
+                            <img src="./assets/ec/sculpture_crop.jpg" alt="" width="100%">
+                            <p align="middle">Automatic Cropping</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <img src="./assets/ec/self_portrait_base.jpg" alt="" width="100%">
+                            <p align="middle">10% Cropping</p>
+                        </td>
+                        <td width="50%">
+                            <img src="./assets/ec/self_portrait_crop.jpg" alt="" width="100%">
+                            <p align="middle">Automatic Cropping</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <img src="./assets/ec/cathedral_base.jpg" alt="" width="100%">
+                            <p align="middle">10% Cropping</p>
+                        </td>
+                        <td width="50%">
+                            <img src="./assets/ec/cathedral_crop.jpg" alt="" width="100%">
+                            <p align="middle">Automatic Cropping</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h2 align="middle">Citation</h2>
+            <p>The bells and whistles section was inspired by the Canny edge detection algorithm. More information can be found <a href="https://en.wikipedia.org/wiki/Canny_edge_detector">here</a>.</p>
+            <p>Website template is credited to CS 184.</p>
+        </div>
+    </div>
+</body>

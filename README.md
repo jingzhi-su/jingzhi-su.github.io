@@ -1,1 +1,1 @@
-# Jingzhi-Su.github.io
+# jingzhi-su.github.io
