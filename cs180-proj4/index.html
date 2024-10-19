@@ -1,0 +1,465 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1200px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  h2 {
+    text-align: center;
+  }
+  .new_part {
+    margin-top: 5%; 
+    margin-bottom: 5%;
+  }
+  table {
+    width: 100%; 
+    margin-left: auto; 
+    margin-right: auto;
+    margin-top: 3%; 
+    margin-bottom: 3%;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+  }
+  table {
+    table-layout: fixed;
+  }
+  td {
+    border: 2px solid #42404049;
+    border-radius: 15px;
+    padding: 2%;
+    vertical-align: middle;
+    & p {
+        text-align: center;
+        padding-top: 10px;
+    }
+  }
+  th {
+  padding: 2%;
+  text-align: center;
+  width:50%;
+  }
+</style>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<title>CS 180 Project 4</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+  <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
+  <h2>Project 4: Image Warping and Mosaicing </h1>
+  <h2>Stephen Su</h2>
+  <div class="new_part">
+    <h2>Project 4A Overview</h2>
+    <p>
+      In this project, we learn about how image warping and mosaicing. Using two or more photographs, we will create an image mosaic by projectively warping images and stitching them together. To warp images, we need to define correspondence points between each 
+      image and calculate a homography transformation matrix from our correspondence points. Afterwards, we can stitch the images together by aligning each image.
+    </p>
+  </div>
+  <div class="new_part">
+    <h2>Part 1: Shooting and Digitizing Pictures</h2>
+    <p>
+      Before we start, we need to first a variety of pictures to use for testing. A rule of thumb while taking these pictures is to keep the center of projection (COP) fixed and take pictures by rotating the camera along the center of projection. It is generally 
+      recommended to have between 40% and 70% overlap between pictures. These pictures were all taken with a iPhone 12 Pro.
+    </p>
+    <table>
+      <tbody>
+          <tr>
+              <td>
+                  <img src="./data/adobe_high.jpg" alt="">
+                  <p>Adobe Founder's Tower at Night</p>
+              </td>
+              <td>
+                  <img src="./data/macbook_high.jpg" alt="">
+                  <p>Macbook with Sticker</p>
+              </td>
+          </tr>
+          <tr>
+            <td>
+              <img src="./data/soda_left_high.jpg" alt="">
+              <p>Soda Hall 1</p>
+            </td>
+            <td>
+              <img src="./data/soda_right_high.jpg" alt="">
+              <p>Soda Hall 2</p>
+            </td>
+          </tr>
+      </tbody>
+  </table>
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <img src="./data/hmb_left_high.jpg" alt="">
+          <p>Hearst Mining Building 1</p>
+        </td>
+        <td>
+          <img src="./data/hmb_center_high.jpg" alt="">
+          <p>Hearst Mining Building 2</p>
+        </td>
+        <td>
+          <img src="./data/hmb_right_high.jpg" alt="">
+          <p>Hearst Mining Building 3</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="./data/bear_left_high.jpg" alt="">
+          <p>Sturdy the Bear 1</p>
+        </td>
+        <td>
+          <img src="./data/bear_center_high.jpg" alt="">
+          <p>Sturdy the Bear 2</p>
+        </td>
+        <td>
+          <img src="./data/bear_right_high.jpg" alt="">
+          <p>Sturdy the Bear 3</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="new_part">
+    <h2>Part 2: Recovering Homographies</h2>
+    <p>
+      To warp our images, we first need to recover the homography transformation matrix. The homography transformation matrix is a 3x3 matrix that maps points from one image $p$ to points in another image $p'$. The image transformation is then represented as $p'=Hp$, 
+      with H having 8 degrees of freedom. Below is an equation representing $p'=Hp$.
+    </p>
+    $$\begin{bmatrix}
+    a && b && c \\
+    d && e && f \\
+    g && h && 1 \\
+    \end{bmatrix}
+    \begin{bmatrix}
+    x \\
+    y \\
+    1 \\
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+    wx' \\
+    wy' \\
+    w \\
+    \end{bmatrix}
+    $$
+    <p>
+      The goal here is to solve for the 8 unknown variables in the homography matrix. If we expand this matrix multiplication into a set of equations, we get:
+    </p>
+    \begin{cases}
+    ax + by + c = wx' \\
+    dx + ey + f = wy' \\
+    gx + hy + 1 = w \\
+    \end{cases}
+    <p>
+      Since we know the value of $w$, we can subsitute the value of $w$ into the first two equations. We end up with the following result.
+    </p>
+    \begin{cases}
+    ax + by + c = (gx + hy + 1)x' \\
+    dx + ey + f = (gx + hy + 1)y' \\
+    \end{cases}
+    \begin{cases}
+    ax + by + c - gxx' - hx'y = x' \\
+    dx + ey + f - gxy' - hyy' = y' \\
+    \end{cases}
+    \begin{cases}
+    ax + by + c + d(0) + e(0) + f(0)- gxx' - hx'y = x' \\
+    a(0) + b(0) + c(0) + dx + ey + f - gxy' - hyy' = y' \\
+    \end{cases}
+    <p>
+      If we put these equations into matrix form, we get the following matrix multiplication.
+    </p>
+    $$
+    \begin{bmatrix}
+    x && y && 1 && 0 && 0 && 0 && xx' && x'y \\
+    0 && 0 && 0 && x && y && 1 && xy' && yy' \\
+    \end{bmatrix}
+    \begin{bmatrix}
+    a \\
+    b \\
+    c \\
+    d \\
+    e \\
+    f \\
+    g \\
+    h \\
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+    x' \\
+    y' \\
+    \end{bmatrix}
+    $$
+    <p>
+      From here, we can derive a general form to solve for the values in the homography matrix given multiple correspondence points, where each correspondence point is represented as $(x_i, y_i)$ in our first image and $(x'_i, y'_i)$ for our second image.
+    </p>
+    $$
+    \begin{bmatrix}
+    \vdots && \vdots && \vdots && \vdots && \vdots && \vdots && \vdots && \vdots \\
+    x_i && y_i && 1 && 0 && 0 && 0 && x_i x'_i && x'_i y_i \\
+    0 && 0 && 0 && x_i && y_i && 1 && x_i y'_i && y_i y'_i \\
+    \vdots && \vdots && \vdots && \vdots && \vdots && \vdots && \vdots && \vdots \\
+    \end{bmatrix}
+    \begin{bmatrix}
+    a \\
+    b \\
+    c \\
+    d \\
+    e \\
+    f \\
+    g \\
+    h \\
+    \end{bmatrix}
+    = 
+    \begin{bmatrix}
+    \vdots \\
+    x'_i \\
+    y'_i \\
+    \vdots \\
+    \end{bmatrix}
+    $$
+    <p>
+      Since we have an overconstrained system of equations in this case, we need to approximate the solution to the homography matrix using Least Squares. 
+    </p>
+  </div>
+  <div>
+    <h2>Part 3: Image Rectification</h2>
+    <p>
+      With a given homography matrix $H$, we can now warp our images from one image to another. Firstly, we need to find the size of the resulting warped image by first applying our homography matrix $H$ to the four corners of our input image. The resulting width 
+      and height is the differences in the maximum and minimum $x$ and $y$ coordinates of all four corners. Next, using the same corners, we draw out a mask containing points of where our image would be warped to, using the skimage.ndimage.polygon function. 
+      We may need to shift our corners such that all corners have a nonnegative $x$ and $y$ value. Lastly, with the mask, we can use an inverse warping technique by multiplying the points in our mask by $H^{-1}$, the inverse of our homography matrix, to interpolate 
+      the pixel value at each location. Our method will use bilinear interpolation through the scipy.interpolate.griddata function.
+    </p>
+    <p>
+      The following images involves rectifying images with a planar surface, often a square or a rectangle, and warping them such that the surface is front-facing. Since we are only working with one image, we need to define correspondence points both on the image 
+      itself as well as manually defining the square or rectangular plane.
+    </p>
+    <table>
+      <tbody>
+        <tr>
+          <tr>
+            <th></th>
+            <th align="middle" style="width:50%">Adobe</th>
+            <th></th>
+          </tr>
+          <td>
+            <img src="./data/adobe_high.jpg" alt="">
+            <p>Adobe Founder's Tower at Night</p>
+          </td>
+          <td>
+            <img src="./out/adobe.jpg" alt="">
+            <p>Adobe Founder's Tower at Night Rectified</p>
+          </td>
+          <td>
+            <img src="./out/adobe_cropped.jpg" alt="">
+            <p>Cropped Adobe Logo</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <tbody>
+        <tr>
+          <tr>
+            <th></th>
+            <th align="middle" style="width:50%">Macbook</th>
+            <th></th>
+          </tr>
+          <td>
+            <img src="./data/macbook_high.jpg" alt="">
+            <p>Macbook</p>
+          </td>
+          <td>
+            <img src="./out/macbook.jpg" alt="">
+            <p>Macbook Rectified</p>
+          </td>
+          <td>
+            <img src="./out/macbook_cropped.jpg" alt="">
+            <p>Cropped Macbook</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      As seen in the Macbook example, because the points were manually selected (and often error prone), the results can be extremely sensitive to small errors in the point selection. We are only using four points to define a rectangular plane, and as a result, the 
+      homography recovery is very unstable and prone to noise.
+    </p>
+  </div>
+  <div class="new_part">
+    <h2>Part 4: Blending Images Into a Mosaic</h2>
+    <p>
+      Now that we are able to warp our images, we now need to blend our images. Below are some images we want to blend.
+    </p>
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            <img src="./data/soda_left_high.jpg" alt="">
+            <p>Soda Hall Fifth Floor Left</p>
+          </td>
+          <td>
+            <img src="./data/soda_right_high.jpg" alt="">
+            <p>Soda Hall Fifth Floor Right</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      Firstly, we want to keep the left image still, and warp the right image into the left image. Then, we need to adjust the two images such that the correspondence points align with each other, which is often done using a shift of both images calculated from 
+      the corners of the warped image. After the alignment process, we pad both images such that they are the same size, by taking the maximum dimensions of the two images.
+    </p>
+    <p>
+      At this point, we have our two images, one unwarpped and one warpped, aligned together. If we use a naive blending technique where we stack the two images on top of each other, it looks something like this:
+    </p>
+    <table style="width: 50%">
+      <tbody>
+        <tr>
+          <td>
+            <img src="./out/naive_blend.jpg" alt="">
+            <p>Soda Hall Naive Blend</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      Although the picture doesn't look bad, you can clearly see the seems where one image overlaps the other. This is where alpha blending comes in. To alpha blend, we first start by computing the distance transform of the two images we want to blend, using the 
+      scipy.ndimage.distance_transform_edt function. After normalizing, we get a distance transform as that looks like the following:
+    </p>
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            <img src="./out/left_distance_transform.jpg" alt="">
+            <p>Soda Hall Fifth Floor Left Distance Transform</p>
+          </td>
+          <td>
+            <img src="./out/right_distance_transform.jpg" alt="">
+            <p>Soda Hall Fifth Floor Right Distance Transform</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      We can set our alpha mask to the regions where the left distance transform is greater than the right distance transform, and our mask will look like the following:
+    </p>
+    <table style="width: 50%">
+      <tbody>
+        <tr>
+          <td>
+            <img src="./out/mask.jpg" alt="">
+            <p>Mask where left distance transform > right distance transform</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      With this mask, we will use blending techniques from Project 2 where we used a Gaussian and Laplacian stack to perform a low-pass and high-pass of both images, and blend them together by adding and collapsing the stacks. The results are below:
+    </p>
+    <table style="width: 75%">
+      <tbody>
+        <tr>
+          <td>
+            <img src="./out/soda.jpg" alt="">
+            <p>Soda Hall Fifth Floor</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      Here are some more mosaics created with the same technique, extended to three pictures.
+    </p>
+    <h3>Example 2: Hearst Mining Building</h3>
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            <img src="./data/hmb_left_high.jpg" alt="">
+            <p>Hearst Mining Building 1</p>
+          </td>
+          <td>
+            <img src="./data/hmb_center_high.jpg" alt="">
+            <p>Hearst Mining Building 2</p>
+          </td>
+          <td>
+            <img src="./data/hmb_right_high.jpg" alt="">
+            <p>Hearst Mining Building 3</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table style="width: 75%">
+      <tbody>
+        <tr>
+          <td>
+            <img src="./out/hmb.jpg" alt="">
+            <p>Hearst Mining Building</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>Example 3: Sturdy the Bear</h3>
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            <img src="./data/bear_left_high.jpg" alt="">
+            <p>Sturdy the Bear 1</p>
+          </td>
+          <td>
+            <img src="./data/bear_center_high.jpg" alt="">
+            <p>Sturdy the Bear 2</p>
+          </td>
+          <td>
+            <img src="./data/bear_right_high.jpg" alt="">
+            <p>Sturdy the Bear 3</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table style="width: 75%">
+      <tbody>
+        <tr>
+          <td>
+            <img src="./out/bear.jpg" alt="">
+            <p>Sturdy the Bear</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      It was here where I learned that it is easier to create mosaics out of objects with clear correspondences, such as buildings with sharp corners. The correspondences for this mosaic was hard to define due to the clutterness of the tree's leaves making it hard 
+      to tell which correspondence point goes where.
+    </p>
+  </div>
+  <div class="new_part">
+    <h2>Project Insights</h2>
+    <p>
+      I enjoyed doing this project and learning more about stitching together images using a Homography. Although this project took many hours, I was extremely satisfied in the end to see my results materialize. 
+    </p>
+    <h2>Citation</h2>
+    <p>
+      Website Template is from <a href="https://cs184.eecs.berkeley.edu/sp24">CS184</a>
+      <br>
+      Tool used to define correspondence points can be found in this <a href="https://cal-cs180.github.io/fa23/hw/proj3/tool.html">link</a>
+    </p>
+  </div>
+</body>
