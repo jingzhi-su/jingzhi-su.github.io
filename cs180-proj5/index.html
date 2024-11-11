@@ -1,0 +1,1006 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1200px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  h2 {
+    text-align: center;
+  }
+  .new_part {
+    margin-top: 5%; 
+    margin-bottom: 5%;
+  }
+  table {
+    width: 100%; 
+    margin-left: auto; 
+    margin-right: auto;
+    margin-top: 3%; 
+    margin-bottom: 3%;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+  }
+  table {
+    table-layout: fixed;
+  }
+  td {
+    border: 2px solid #42404049;
+    border-radius: 15px;
+    padding: 2%;
+    vertical-align: middle;
+    & p {
+        text-align: center;
+        padding-top: 10px;
+    }
+  }
+  th {
+  padding: 2%;
+  text-align: center;
+  width:50%;
+  }
+</style>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<title>CS 180 Project 5</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+<body>
+    <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
+    <h2>Project 5: Diffusion Models</h1>
+    <h2>Stephen Su</h2>
+    <div class="new_part">
+        <h2>Project 5A Overview</h2>
+        <p>
+            In this project, we learn about how diffusion models work using the <a href="https://huggingface.co/docs/diffusers/api/pipelines/deepfloyd_if">DeepFloyd IF</a> diffusion model. We will implement diffusion sampling loops, and then use them for tasks 
+            such as inpainting and creating optical illusions.
+        </p>
+    </div>
+    <div class="new_part">
+        <h2>Part 0: Setup</h2>
+        <p>
+            Before we start, we first need to set up our pretrained model. Deepfloyd is a two stage diffusion model, where the first stage prduces an image of size $64 \times 64$ pixels, and the second stage produces an image of size $256 \times 256$ pixels. We 
+            can then sample from the model, varying the number of inference steps to take. Inference steps indicate how many denoising steps to take, with the a higher inference step correlating to higher image quality at the cost of computational cost. We also 
+            set a random seed to use for the rest of the project. We will be using the seed $0$. Below are some samples from the model given a prompt.
+        </p>
+        <h4>Example 1: An Oil Painting of a Snowy Mountain Village</h4>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.0/snow_stage1_20.png" alt="">
+                        <p>Stage 1, 20 Inference Steps</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.0/snow_stage2_20.png" alt="">
+                        <p>Stage 2, 20 Inference Steps</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.0/snow_stage1_100.png" alt="">
+                        <p>Stage 1, 100 Inference Steps</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.0/snow_stage2_100.png" alt="">
+                        <p>Stage 2, 100 Inference Steps</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The quality for the image from running 100 inference steps seems noticably higher than that of the image from running 20 inference steps. There is more texture on the snow in both the mountains and the houses for the 100 inference steps.
+        </p>
+        <h4>Example 2: A Man Wearing a Hat</h4>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.0/man_stage1_20.png" alt="">
+                        <p>Stage 1, 20 Inference Steps</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.0/man_stage2_20.png" alt="">
+                        <p>Stage 2, 20 Inference Steps</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The output from the model accurately describes the prompt, and even added more features in the image that wasn't in the prompt, such as facial hair and glasses. The quality of the output from the second stage is higher than that of the first stage. 
+            However, that is to be expected since stage 2 produces an image with more pixels.
+        </p>
+        <h4>Example 3: A Rocket Ship</h4>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.0/rocket_stage1_20.png" alt="">
+                        <p>Stage 1, 20 Inference Steps</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.0/rocket_stage2_20.png" alt="">
+                        <p>Stage 2, 20 Inference Steps</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The model is able to correctly output a rocket ship. However, with only 20 inference steps, the details of the rocket ship seem quite lacking. The image seems to be a basic rocket ship with nothing fancy or sophisticated.
+        </p>
+    </div>
+    <div class="new_part">
+        <h2>Part 1: Sampling Loops</h2>
+        <p>
+            In this part, we will create our own sampling loops using the pretained DeepFloyd denoisers. Starting with a clean image $x_0$, we can iteratively add noise to the image to get $x_t$, until we are left with pure noise at $t = T$. For the DeepFloyd models, 
+            the amount of noise added at each step is determined by a noise coefficient $\overline{\alpha}_t$, and $T$ by default is set to $T = 1000$. A diffusion model will try to reverse this process by predicting the noise and denoising the image. Given an 
+            image $x_t$, we can predict the noise, and with the noise we can either remove the noise entirely to get $x_0$ or remove a portion of the noise to estimate $x_{t - 1}$, with slightly less noise. We can repeatedly remove a portion of the noise until we 
+            are at a clean image $x_0$. If we want to sample images from the model, we can feed in pure noise at timestep $T$ from a gaussian distribution and apply the same process.
+        </p>
+        <h3>Part 1.1: Implementing the Forward Process</h3>
+        <p>
+            In the forward process, we take a clean image $x_0$, and add noise to the clean image to get a noisy image $x_t$ at timestep $t$. The noise is sampled from a gaussian distribution with mean $\sqrt{\overline{\alpha}_t}x_0$ and variance 
+            ($1 - \overline{\alpha}_t$). This is defined by 
+            $$ q(x_t | x_0) = \mathcal{N}(x_t; \sqrt{\overline{\alpha}_t}x_0, (1 - \overline{\alpha}_t)\mathbf{I}) $$
+            This is equivalent to computing
+            $$ x_t = \sqrt{\overline{\alpha}_t}x_0 + \sqrt{1 - \overline{\alpha}_t}\epsilon \; , \; \epsilon \sim \mathcal{N}(0, 1) $$
+            Here, $\overline{\alpha}_t$ values are determined by the people over at DeepFloyd, where $\overline{\alpha}_t$ is close to $1$ for a small $t$, and close to $0$ for a large $t$. Below are some results after applying the forward process for various $t$ 
+            values.
+        </p>
+        <h4>Example 4: The Campanile</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/campanile_low.png" alt="">
+                        <p>Berkeley Campanile, $t = 0$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_250.png" alt="">
+                        <p>Noisy Campanile, $t = 250$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_500.png" alt="">
+                        <p>Noisy Campanile, $t = 500$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_750.png" alt="">
+                        <p>Noisy Campanile, $t = 750$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.2: Classical Denoising</h3>
+        <p>
+            Traditionally, if we want to remove noise, we would apply a gaussian blur filter to the noisy image. Below are the results from applying a gaussian blur to each of the noisy images above with a kernel size $k = 7$ and $\sigma = 2$. 
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_250.png" alt="">
+                        <p>Noisy Campanile, $t = 250$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_500.png" alt="">
+                        <p>Noisy Campanile, $t = 500$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_750.png" alt="">
+                        <p>Noisy Campanile, $t = 750$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.2/campanile_gaussian_250.png" alt="">
+                        <p>Gaussian Blur Denoising, $t = 250</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.2/campanile_gaussian_500.png" alt="">
+                        <p>Gaussian Blur Denoising, $t = 500</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.2/campanile_gaussian_750.png" alt="">
+                        <p>Gaussian Blur Denoising, $t = 750</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The results don't look very nice, and we will fix that in the upcoming parts.
+        </p>
+        <h3>Part 1.3: One-Step Denoising</h3>
+        <p>
+            Instead of using a gaussian blur, we will use a pretrained UNet denoiser from the first stage of DeepFloyd. The model can predict the gaussian noise from the image given a timestep $t$, and we can recover something close to the original image by 
+            subtracting the noise from the noisy image.
+        </p>
+        <p>
+            Note: Since the model was trained with text conditioning, we need to pass in a prompt. We will feed in the generic prompt "a high quality photo" into the model.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_250.png" alt="">
+                        <p>Noisy Campanile, $t = 250$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_500.png" alt="">
+                        <p>Noisy Campanile, $t = 500$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.1/campanile_noisy_750.png" alt="">
+                        <p>Noisy Campanile, $t = 750$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.3/campanile_1step_denoise_250.png" alt="">
+                        <p>One-Step Denoised, $t = 250$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.3/campanile_1step_denoise_500.png" alt="">
+                        <p>One-Step Denoised, $t = 500$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.3/campanile_1step_denoise_750.png" alt="">
+                        <p>One-Step Denoised, $t = 750$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            It's clear here that the diffusion model does a lot better in terms of denoising than using a gaussial blur filter.
+        </p>
+        <h3>Part 1.4: Iterative Denoising</h3>
+        <p>
+            In the previous part, we denoised using a single step. However, diffusion models were trained to denoise iteratively across hundreds of steps. We could start at timestep $T = 1000$ with $x_{1000}$, and iteratively denoise one step at a time until we get 
+            $x_0$. However, this is quite slow and costly. Instead, we can skip some steps and use strided timesteps insteads. The strided timesteps will start at $t = 990$, corresponding to the noisiest image, and take a stride of $30$ until we are at timestep 
+            $t = 0$, the clean image. On the $i^{th}$ step, we are at timestep $t$ with $x_t$, and want to get to $x_{t'}$ such that $t' < t$ using the following formula:
+            $$ x_{t'} = \frac{\sqrt{\overline{\alpha}_{t'}}\beta_{t'}}{1 - \overline{\alpha}_{t}}x_0 + \frac{\sqrt{\alpha_t}(1 - \overline{\alpha}_{t'})}{1 - \overline{\alpha}_{t}}x_t + v_{\sigma} $$
+            <ul>
+                <li>$x_0$ is our current estimate of the clean image from performing one-step denoising</li>
+                <li>$x_t$ is our noisy image at timestep $t$</li>
+                <li>$x_{t'}$ is our noisy image at timestep $t'$ such that $t' < t$</li>
+                <li>$\alpha_t = \frac{\overline{\alpha}_{t'}}{\overline{\alpha}_{t}}$</li>
+                <li>$\beta_t = 1 - \alpha_t$</li>
+                <li>$v_\sigma$ is random noise predicted by the DeepFloyd model</li>
+            </ul>
+            Below are the results after applying iterative denoising to the Campanile example.
+        </p>
+        <table style="margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.4/noisy_t_90.png" alt="">
+                        <p>Noisy Campanile, $t = 90$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.4/noisy_t_240.png" alt="">
+                        <p>Noisy Campanile, $t = 240$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.4/noisy_t_390.png" alt="">
+                        <p>Noisy Campanile, $t = 390$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.4/noisy_t_540.png" alt="">
+                        <p>Noisy Campanile, $t = 540$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.4/noisy_t_690.png" alt="">
+                        <p>Noisy Campanile, $t = 690$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/campanile_low.png" alt="">
+                        <p>Berkeley Campanile</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.4/iterative_denoised.png" alt="">
+                        <p>Iteratively Denoised</p>
+                    </td>                    
+                    <td>
+                        <img src="./out/5A/1.4/one_step_denoised.png" alt="">
+                        <p>One-Step Denoised</p>
+                    </td>                    
+                    <td>
+                        <img src="./out/5A/1.4/gaussian_blurred.png" alt="">
+                        <p>Gaussian Blurred</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.5: Diffusion Model Sampling</h3>
+        <p>
+            With iterative denoising, instead of starting with a given image, we can instead start with pure noise. Here, the model will be effectively denoising pure noise, generating an image from scratch. Below are some example outputs from the model using this 
+            process, with the prompt "a high quality photo" passed in. 
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.5/1.png" alt="">
+                        <p>Sample 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.5/2.png" alt="">
+                        <p>Sample 2</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.5/3.png" alt="">
+                        <p>Sample 3</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.5/4.png" alt="">
+                        <p>Sample 4</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.5/5.png" alt="">
+                        <p>Sample 5</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.5/6.png" alt="">
+                        <p>Sample 6</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            The quality of the images are quite poor, with many of them being too monotone. We will fix that in the next section.
+        </p>
+        <h3>Part 1.6: Classifier-Free Guidance (CFG)</h3>
+        <p>
+            To improve the image quality, we will use a technique called Classifier-Free Guidance, in which we compute a conditional noise estimate $\epsilon_c$ and an unconditional noise estimate $\epsilon_u$. Our new noise estimate will then be
+            $$ \epsilon = \epsilon_u + \gamma (\epsilon_c - \epsilon_u) $$
+            In the equation above, $\gamma$ controls the strenght of CFG. When $\gamma = 0$, we get an unconditional noise estimate, and when $\gamma = 1$, we get a conditional noise estmiate. However, when $\gamma > 1$, the quality of the image drastically 
+            improves. The reasons behind this phenomenon is still up for debate today, but here some sample images after applying this technique.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.6/1.png" alt="">
+                        <p>Sample 1</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.6/2.png" alt="">
+                        <p>Sample 2</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.6/3.png" alt="">
+                        <p>Sample 3</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.6/4.png" alt="">
+                        <p>Sample 4</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.6/5.png" alt="">
+                        <p>Sample 5</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.6/6.png" alt="">
+                        <p>Sample 6</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>The images here are much more vibrant, with more colors than the images in the previous section</p>
+        <h3>Part 1.7: Image to Image Translation</h3>
+        <p>
+            In this part, we apply the <a href="https://sde-image-editing.github.io/">SDEdit</a> algorithm to various images. The SDEdit algorithm starts by adding noise to an image, and then force the image back to the image manifold without any conditioning, 
+            getting an output image simiar to the original image with a few "edits". We will experiment with different starting indices in our strided timesteps, mainly $i_{start} \in \{1, 3, 5, 7, 10, 20\}$.
+        </p>
+        <h4>Example 5: SDEdit Campanile</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/campanile_low.png" alt="">
+                        <p>Berkeley Campanile</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/campanile_SDEdit_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/campanile_SDEdit_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/campanile_SDEdit_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/campanile_SDEdit_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/campanile_SDEdit_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/campanile_SDEdit_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 6: SDEdit Nevada Beach</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/beach.jpg" alt="">
+                        <p>Nevada Beach, Lake Tahoe</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/beach_SDEdit_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/beach_SDEdit_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/beach_SDEdit_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/beach_SDEdit_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/beach_SDEdit_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/beach_SDEdit_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 7: SDEdit Donner Lake</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/lake.jpg" alt="">
+                        <p>Donner Lake, Truckee</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/lake_SDEdit_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/lake_SDEdit_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/lake_SDEdit_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7/lake_SDEdit_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/lake_SDEdit_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7/lake_SDEdit_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.7.1: Editing Hand Drawn and Web Images</h3>
+        <p>
+            The SDEdit algorithm works particularly well with non-realistic image, such as drawings, and projecting it onto the natural image manifold. Below are some examples of this algorithm with nonrealistic images.
+        </p>
+        <h4>Example 8: SDEdit Lightning McQueen</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning.jpeg" alt="">
+                        <p>Lightning McQueen, Cars</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning_SDEdit_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning_SDEdit_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning_SDEdit_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning_SDEdit_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning_SDEdit_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/lightning_SDEdit_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 9: SDEDit Blue Car Drawing</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car.png" alt="">
+                        <p>My Drawing of a Blue Car</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car_SDEdit_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car_SDEdit_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car_SDEdit_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car_SDEdit_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car_SDEdit_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_car_SDEdit_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 9: SDEdit Whale and Fish Drawing</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea.png" alt="">
+                        <p>My Drawing of a Whale and Fish</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea_SDEdit_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea_SDEdit_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea_SDEdit_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea_SDEdit_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea_SDEdit_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.1/draw_sea_SDEdit_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.7.2: Inpainting</h3>
+        <p>
+            Here, we implement the inpainting procedure. The inpainting procedure starts out with an image $x_{orig}$ and a binary mask $\mathbf{m}$, and creates a new image where $\mathbf{m} = 1$, while keeping the original image where $\mathbf{m} = 0$. At every 
+            step of the diffusion loop, after obtaining $x_{t'}$, we "force" $x_{t'}$ to have the same pixels as $x_{orig}$ where $\mathbf{m} = 0$ through the equation
+            $$ x_{t'} \leftarrow \mathbf{m} x_{t'} + (\mathbf{1} - \mathbf{m}) \cdot f(x_{orig}, t') $$
+            where $f$ is a function of the forward process from earlier. Below are some results with the inpainting procedure implemented.
+        </p>
+        <h4>Example 10: Inpainting Campanile</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/campanile_low.png" alt="">
+                        <p>Berkeley Campanile</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/campanile_mask.png" alt="">
+                        <p>Mask</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/campanile_replace.png" alt="">
+                        <p>Masked Campanile</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/campanile_masked.png" alt="">
+                        <p>Campanile Impainted</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 11: Inpainting Mount Rushmore</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.2/mount_rushmore.png" alt="">
+                        <p>Mount Rushmore</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/mount_rushmore_mask.png" alt="">
+                        <p>Mask</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/mount_rushmore_replace.png" alt="">
+                        <p>Masked Mount Rushmore</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/mount_rushmore_masked.png" alt="">
+                        <p>Mount Rushmore Impainted</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 11: Inpainting Watermelons</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.2/watermelon.png" alt="">
+                        <p>Watermelons</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/watermelon_mask.png" alt="">
+                        <p>Mask</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/watermelon_replace.png" alt="">
+                        <p>Masked Watermelons</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.2/watermelon_masked_1.png" alt="">
+                        <p>Watermelons Impainted</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.7.3: Text Conditional Image to Image Translation</h3>
+        <p>
+            Instead of projecting onto the image manifold using the prompt "a high quality photo", we will instead guide the projection down with a text prompt. This is done by changing the prompt "a high quality photo" into a more specific prompt. Below are some 
+            results where we change the prompt. Similar to previous parts, we will vary the noise levels to visualize the differences.
+        </p>
+        <h4>Example 12: Campanile, "A Rocket Ship"</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/campanile_low.png" alt="">
+                        <p>Berkeley Campanile</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/campanile_rocket_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/campanile_rocket_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/campanile_rocket_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/campanile_rocket_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/campanile_rocket_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/campanile_rocket_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 13: Dog, "A photo of a dog"</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog.png" alt="">
+                        <p>Dog</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog_dog_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog_dog_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog_dog_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog_dog_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog_dog_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/dog_dog_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 14: Oppenheimer, "A photo of a man"</h4>
+        <table style="width: 25%; margin-bottom: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer.png" alt="">
+                        <p>Oppenheimer</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="width: 75%;margin-top: 0%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer_man_1.png" alt="">
+                        <p>$i_{start} = 1$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer_man_3.png" alt="">
+                        <p>$i_{start} = 3$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer_man_5.png" alt="">
+                        <p>$i_{start} = 5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer_man_7.png" alt="">
+                        <p>$i_{start} = 7$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer_man_10.png" alt="">
+                        <p>$i_{start} = 10$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.7.3/oppenheimer_man_20.png" alt="">
+                        <p>$i_{start} = 20$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.8: Visual Anagrams</h3>
+        <p>
+            In this part, we will create optical illusion, which are images that look like one thing, but when flipped upside down, the image looks like another thing. To do this, we need to adjust the way we calculate noise in our process. At step $t$, we will 
+            denoise an image $x_t$ with one prompt to optain $\epsilon_1$. At the same time, we will flip $x_t$ upside and denoise with a different prompt to get noise estimate $\epsilon_2$. We will flip $\epsilon_2$ right-side up, and then average the two noise 
+            estimates. The procedure can be summarized in the following equations.
+            $$ \epsilon_1 = \text{UNet}(x_t, t, p_1) $$
+            $$ \epsilon_2 = \text{flip}(\text{UNet}(\text{flip}(x_t), t, p_2)) $$
+            $$ \epsilon = \frac{\epsilon_1 + \epsilon_2}{2} $$
+            where $\text{UNet}$ is our model, $\text{flip}$ is a function that flips our image, and $p_1$ and $p_2$ are two different prompt embeddings. Our final estimate is $\epsilon$, and we proceed normally as before, applying CFG as well. Below are some 
+            results.
+        </p>
+        <h4>Example 15</h4>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.8/old_man_campfire.png" alt="">
+                        <p>An Oil Painting of an Old Man</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.8/campfire_old_man.png" alt="">
+                        <p>An Oil Painting of People Around a Campfire</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 16</h4>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.8/einstein_tiger.png" alt="">
+                        <p>A Painting of Albert Einstein</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.8/tiger_einstein.png" alt="">
+                        <p>An Painting of a Tiger</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 17</h4>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.8/panda_fox.png" alt="">
+                        <p>An Oil Painting of a Red Panda</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.8/fox_panda.png" alt="">
+                        <p>An Oil Painting of a Fox</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 18</h4>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.8/walrus_lamb_1.png" alt="">
+                        <p>A Drawing of a Walrus</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.8/lamb_walrus_1.png" alt="">
+                        <p>A Drawing of a Lamb</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Part 1.9: Hybrid Images</h3>
+        <p>
+            Similar to Project 2, we can use diffusion models to create so-called hybrid images, those that look like one thing close up, and another thing farther away. To do so, we can create a composite noise $\epsilon$ by estimating the noise with two different 
+            prompts, and then combining the low frequencies of one noise estimate with the high frequencies of another noise estimate. This can be summarized as follows
+            $$ \epsilon_1 = \text{UNet}(x_t, t, p_1) $$
+            $$ \epsilon_2 = \text{UNet}(x_t, t, p_2) $$
+            $$ \epsilon = {f_{lowpass}}(\epsilon_1) + {f_{highpass}}(\epsilon_2) $$
+            where $f_{lowpass}$ and $f_{highpass}$ are low and high pass functions from performing a gaussian blur, and $p_1$ and $p_2$ are two different text prompts. Our final estimate is $\epsilon$, and we proceed normally as before, applying CFG as well. Below are some 
+            results.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.9/waterfall_skull.png" alt="">
+                        <p>Hybrid Image of Skull and Waterfall</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.9/gym_hamburger.png" alt="">
+                        <p>Hybrid Image of Gym and Hamburger</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5A/1.9/bird_feather.png" alt="">
+                        <p>Hybrid Image of Bird and Feather</p>
+                    </td>
+                    <td>
+                        <img src="./out/5A/1.9/nyc_panda.png" alt="">
+                        <p>Hybrid Image of NYC and Panda</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="new_part">
+        <h2>Project Insights</h2>
+        <p>
+            I really enjoyed learning about how diffusion models work. My favorite part was being able to generate my own images from scratch, almost magically.
+        </p>
+    </div>
+</body>
