@@ -48,10 +48,37 @@
     }
   }
   th {
-  padding: 2%;
+  padding-bottom: 1%;
   text-align: center;
   width:50%;
   }
+  .gif-container {
+      position: relative;
+    }
+    .hover-container {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .static-image,
+    .gif {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .gif {
+      display: none; /* Initially hidden */
+    }
+    .hybrid { 
+        transition: transform 0.75s; 
+    }
+    .hybrid:hover { 
+        transform: scale(0.20); 
+    }
 </style>
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
@@ -81,7 +108,7 @@
             can then sample from the model, varying the number of inference steps to take. Inference steps indicate how many denoising steps to take, with the a higher inference step correlating to higher image quality at the cost of computational cost. We also 
             set a random seed to use for the rest of the project. We will be using the seed $0$. Below are some samples from the model given a prompt.
         </p>
-        <h4>Example 1: An Oil Painting of a Snowy Mountain Village</h4>
+        <h4>Figure 1: An Oil Painting of a Snowy Mountain Village</h4>
         <table style="width: 50%;">
             <tbody>
                 <tr>
@@ -109,7 +136,7 @@
         <p>
             The quality for the image from running 100 inference steps seems noticably higher than that of the image from running 20 inference steps. There is more texture on the snow in both the mountains and the houses for the 100 inference steps.
         </p>
-        <h4>Example 2: A Man Wearing a Hat</h4>
+        <h4>Figure 2: A Man Wearing a Hat</h4>
         <table style="width: 50%;">
             <tbody>
                 <tr>
@@ -128,7 +155,7 @@
             The output from the model accurately describes the prompt, and even added more features in the image that wasn't in the prompt, such as facial hair and glasses. The quality of the output from the second stage is higher than that of the first stage. 
             However, that is to be expected since stage 2 produces an image with more pixels.
         </p>
-        <h4>Example 3: A Rocket Ship</h4>
+        <h4>Figure 3: A Rocket Ship</h4>
         <table style="width: 50%;">
             <tbody>
                 <tr>
@@ -165,7 +192,7 @@
             Here, $\overline{\alpha}_t$ values are determined by the people over at DeepFloyd, where $\overline{\alpha}_t$ is close to $1$ for a small $t$, and close to $0$ for a large $t$. Below are some results after applying the forward process for various $t$ 
             values.
         </p>
-        <h4>Example 4: The Campanile</h4>
+        <h4>Figure 4: The Campanile</h4>
         <table>
             <tbody>
                 <tr>
@@ -379,7 +406,7 @@
             To improve the image quality, we will use a technique called Classifier-Free Guidance, in which we compute a conditional noise estimate $\epsilon_c$ and an unconditional noise estimate $\epsilon_u$. Our new noise estimate will then be
             $$ \epsilon = \epsilon_u + \gamma (\epsilon_c - \epsilon_u) $$
             In the equation above, $\gamma$ controls the strenght of CFG. When $\gamma = 0$, we get an unconditional noise estimate, and when $\gamma = 1$, we get a conditional noise estmiate. However, when $\gamma > 1$, the quality of the image drastically 
-            improves. The reasons behind this phenomenon is still up for debate today, but here some sample images after applying this technique.
+            improves. The reasons behind this phenomenon is still up for debate today, but here some sample images after applying this technique, using $\gamma = 7$.
         </p>
         <table style="width: 75%;">
             <tbody>
@@ -419,7 +446,7 @@
             In this part, we apply the <a href="https://sde-image-editing.github.io/">SDEdit</a> algorithm to various images. The SDEdit algorithm starts by adding noise to an image, and then force the image back to the image manifold without any conditioning, 
             getting an output image simiar to the original image with a few "edits". We will experiment with different starting indices in our strided timesteps, mainly $i_{start} \in \{1, 3, 5, 7, 10, 20\}$.
         </p>
-        <h4>Example 5: SDEdit Campanile</h4>
+        <h4>Figure 5: SDEdit Campanile</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -462,7 +489,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 6: SDEdit Nevada Beach</h4>
+        <h4>Figure 6: SDEdit Nevada Beach</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -505,7 +532,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 7: SDEdit Donner Lake</h4>
+        <h4>Figure 7: SDEdit Donner Lake</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -552,7 +579,7 @@
         <p>
             The SDEdit algorithm works particularly well with non-realistic image, such as drawings, and projecting it onto the natural image manifold. Below are some examples of this algorithm with nonrealistic images.
         </p>
-        <h4>Example 8: SDEdit Lightning McQueen</h4>
+        <h4>Figure 8: SDEdit Lightning McQueen</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -595,7 +622,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 9: SDEDit Blue Car Drawing</h4>
+        <h4>Figure 9: SDEDit Blue Car Drawing</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -638,13 +665,13 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 9: SDEdit Whale and Fish Drawing</h4>
+        <h4>Figure 10: SDEdit Whale and Fish Drawing</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
                     <td>
                         <img src="./out/5A/1.7.1/draw_sea.png" alt="">
-                        <p>My Drawing of a Whale and Fish</p>
+                        <p>My Drawing of Whale and Fish</p>
                     </td>
                 </tr>
             </tbody>
@@ -688,7 +715,7 @@
             $$ x_{t'} \leftarrow \mathbf{m} x_{t'} + (\mathbf{1} - \mathbf{m}) \cdot f(x_{orig}, t') $$
             where $f$ is a function of the forward process from earlier. Below are some results with the inpainting procedure implemented.
         </p>
-        <h4>Example 10: Inpainting Campanile</h4>
+        <h4>Figure 11: Inpainting Campanile</h4>
         <table>
             <tbody>
                 <tr>
@@ -706,12 +733,12 @@
                     </td>
                     <td>
                         <img src="./out/5A/1.7.2/campanile_masked.png" alt="">
-                        <p>Campanile Impainted</p>
+                        <p>Campanile Inpainted</p>
                     </td>
                 </tr>
             </tbody>
         </table>
-        <h4>Example 11: Inpainting Mount Rushmore</h4>
+        <h4>Figure 12: Inpainting Mount Rushmore</h4>
         <table>
             <tbody>
                 <tr>
@@ -729,12 +756,12 @@
                     </td>
                     <td>
                         <img src="./out/5A/1.7.2/mount_rushmore_masked.png" alt="">
-                        <p>Mount Rushmore Impainted</p>
+                        <p>Mount Rushmore Inpainted</p>
                     </td>
                 </tr>
             </tbody>
         </table>
-        <h4>Example 11: Inpainting Watermelons</h4>
+        <h4>Figure 13: Inpainting Watermelons</h4>
         <table>
             <tbody>
                 <tr>
@@ -752,7 +779,7 @@
                     </td>
                     <td>
                         <img src="./out/5A/1.7.2/watermelon_masked_1.png" alt="">
-                        <p>Watermelons Impainted</p>
+                        <p>Watermelons Inpainted</p>
                     </td>
                 </tr>
             </tbody>
@@ -762,7 +789,7 @@
             Instead of projecting onto the image manifold using the prompt "a high quality photo", we will instead guide the projection down with a text prompt. This is done by changing the prompt "a high quality photo" into a more specific prompt. Below are some 
             results where we change the prompt. Similar to previous parts, we will vary the noise levels to visualize the differences.
         </p>
-        <h4>Example 12: Campanile, "A Rocket Ship"</h4>
+        <h4>Figure 14: Campanile, "A Rocket Ship"</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -805,7 +832,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 13: Dog, "A photo of a dog"</h4>
+        <h4>Figure 15: Dog, "A photo of a dog"</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -848,7 +875,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 14: Oppenheimer, "A photo of a man"</h4>
+        <h4>Figure 16: Oppenheimer, "A photo of a man"</h4>
         <table style="width: 25%; margin-bottom: 0%;">
             <tbody>
                 <tr>
@@ -902,7 +929,7 @@
             where $\text{UNet}$ is our model, $\text{flip}$ is a function that flips our image, and $p_1$ and $p_2$ are two different prompt embeddings. Our final estimate is $\epsilon$, and we proceed normally as before, applying CFG as well. Below are some 
             results.
         </p>
-        <h4>Example 15</h4>
+        <h4>Figure 17</h4>
         <table style="width: 75%;">
             <tbody>
                 <tr>
@@ -917,7 +944,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 16</h4>
+        <h4>Figure 18</h4>
         <table style="width: 75%;">
             <tbody>
                 <tr>
@@ -932,7 +959,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 17</h4>
+        <h4>Figure 19</h4>
         <table style="width: 75%;">
             <tbody>
                 <tr>
@@ -947,7 +974,7 @@
                 </tr>
             </tbody>
         </table>
-        <h4>Example 18</h4>
+        <h4>Figure 20</h4>
         <table style="width: 75%;">
             <tbody>
                 <tr>
@@ -976,31 +1003,608 @@
             <tbody>
                 <tr>
                     <td>
-                        <img src="./out/5A/1.9/waterfall_skull.png" alt="">
+                        <img src="./out/5A/1.9/waterfall_skull.png" alt="" class="hybrid">
                         <p>Hybrid Image of Skull and Waterfall</p>
                     </td>
                     <td>
-                        <img src="./out/5A/1.9/gym_hamburger.png" alt="">
+                        <img src="./out/5A/1.9/gym_hamburger.png" alt="" class="hybrid">
                         <p>Hybrid Image of Gym and Hamburger</p>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <img src="./out/5A/1.9/bird_feather.png" alt="">
+                        <img src="./out/5A/1.9/bird_feather.png" alt="" class="hybrid">
                         <p>Hybrid Image of Bird and Feather</p>
                     </td>
                     <td>
-                        <img src="./out/5A/1.9/nyc_panda.png" alt="">
+                        <img src="./out/5A/1.9/nyc_panda.png" alt="" class="hybrid">
                         <p>Hybrid Image of NYC and Panda</p>
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
+    <hr>
+    <div class="new_part">
+        <h2>Project 5B Overview</h2>
+        <p>
+            In this section of the project, we train a diffusion model on the MNIST dataset to generate images of MNIST digits. We'll first start by training a UNet to do single-step denoising, and then we will train a UNet to iteratively denoise by adding time 
+            conditioning and class conditioning. We will sample results along the way to see what the model outputs.
+        </p>
+    </div>
+    <div class="new_part">
+        <h2>Part 1: Training a Single-Step Denoising UNet</h2>
+        <p>
+            In this part, we implement a denoiser as a UNet. The UNet takes in an image with some level of noise added to it, and the UNet outputs a prediction of what the denoised images looks like. We will use the MNIST dataset, which consists of $28 \times 28$ 
+            pixel black and white images of digits. Below is a diagram of the UNet architecture.
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/unconditional_unet_diagram.png" alt="">
+                        <p>UNet Architecture</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            After implementing the UNet, we can then look at our dataset looks like. For the dataset, we need to generate training data pairs $(z, x)$, where each $x$ is a MNIST digit, and each $z$ is $x$ with some added noise. We use the following equation with 
+            to determine $z$.
+            $$z = x + \sigma\epsilon, \; \epsilon \sim \mathcal{N}(0, \mathbf{I})$$
+            Here, we allow $\sigma$ to be $\sigma \in \{0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0 \}$, which controls the strength of the noise. A higher $\sigma$ value indicates more noise added. Below is a visualization of different $\sigma$ values across different digits.
+        </p>
+        <h4>Figure 21: Visualization of Noising Process </h4>
+        <table style="margin-top: 0%; width: 75%;">
+            <tbody>
+                <tr>
+                    <th>$\sigma = 0.0$</th>
+                    <th>$\sigma = 0.2$</th>
+                    <th>$\sigma = 0.4$</th>
+                    <th>$\sigma = 0.5$</th>
+                    <th>$\sigma = 0.6$</th>
+                    <th>$\sigma = 0.8$</th>
+                    <th>$\sigma = 1.0$</th>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2/5_0.0.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/5_0.2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/5_0.4.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/5_0.5.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/5_0.6.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/5_0.8.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/5_1.0.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2/0_0.0.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/0_0.2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/0_0.4.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/0_0.5.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/0_0.6.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/0_0.8.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/0_1.0.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2/4_0.0.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/4_0.2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/4_0.4.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/4_0.5.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/4_0.6.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/4_0.8.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/4_1.0.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2/1_0.0.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/1_0.2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/1_0.4.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/1_0.5.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/1_0.6.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/1_0.8.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/1_1.0.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2/9_0.0.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/9_0.2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/9_0.4.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/9_0.5.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/9_0.6.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/9_0.8.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2/9_1.0.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            During the training process, the model will attempt to denoise noisy MNIST digits $z$ generated using $\sigma = 0.5$ applied to a digit $x$. For the UNet model, we will use a hidden dimension $D = 128$, optimized using mean squared error as the loss 
+            function. We will train using a batch size of $256$ for $5$ epochs. We will also use the Adam optimizer with a learning rate of $1 \times 10^{-4}$. Below is a plot of the training loss over each gradient descent step we take.
+        </p>
+        <h4>Figure 22: Training Loss Curve</h4>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/training_losses.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Below are some results from the model after the first and fifth epoch.
+        </p>
+        <h4>Figure 23: Results From Test Set After 1 Epoch</h4>
+        <table style="width: 50%; margin-top: 0%;">
+            <tr>
+                <th>Input</th>
+                <th>Noisy, $\sigma = 0.5$</th>
+                <th>Output</th>
+            </tr>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_7.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_7_noised.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_7_denoised.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_2_noised.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_2_denoised.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_1.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_1_noised.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_1_denoised.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Figure 24: Results From Test Set After 5 Epochs</h4>
+        <table style="width: 50%; margin-top: 0%;">
+            <tr>
+                <th>Input</th>
+                <th>Noisy, $\sigma = 0.5$</th>
+                <th>Output</th>
+            </tr>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_7.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_7_noised.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_7_denoised.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_2.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_2_noised.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_2_denoised.png" alt="">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_1.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_1_1_noised.png" alt="">
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.1/epoch_5_1_denoised.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            We can also see how our denoiser performs on various $\sigma$ values that it wasn't trained for.
+        </p>
+        <h4>Figure 25: Results on Digits From Test Set With Various Noise Levels</h4>
+        <table style="width: 40%;">
+            <tr>
+            </tr>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_0.0.png" alt="">
+                        <p>Noisy with $\sigma = 0.0$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_0.0.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_0.2.png" alt="">
+                        <p>Noisy with $\sigma = 0.2$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_0.2.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_0.4.png" alt="">
+                        <p>Noisy with $\sigma = 0.4$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_0.4.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_0.5.png" alt="">
+                        <p>Noisy with $\sigma = 0.5$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_0.5.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_0.6.png" alt="">
+                        <p>Noisy with $\sigma = 0.6$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_0.6.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_0.8.png" alt="">
+                        <p>Noisy with $\sigma = 0.8$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_0.8.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_1.0.png" alt="">
+                        <p>Noisy with $\sigma = 1.0$</p>
+                    </td>
+                    <td>
+                        <img src="./out/5B/1.2.2/7_denoised_1.0.png" alt="">
+                        <p>Denoised Image</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="new_part">
+        <h2>Part 2: Training a Diffusion Model</h2>
+        <h3>Time Conditioning</h3>
+        <p>
+            Up until now, our UNet model only predicted the clean image. In this part, we will make a slight change: instead of predicting the clean image, we predict the noise $\epsilon$ added. Eventually, we want to sample a pure noise $\epsilon \sim \mathcal{N}(0, 
+            \mathbf{I})$ and generate a realistic image $x$ by iteratively denoising. To iteratively denoise, we will use timesteps again, similar to previous sections. Using the equation
+            $$ x_t = \sqrt{\overline{\alpha}_t}x_0 + \sqrt{1 - \overline{\alpha}_t}\epsilon \; , \; \epsilon \sim \mathcal{N}(0, 1) $$
+            we want to generate a noisy image $x_t$ from $x_0$ for some time step $t \in \{0, 1, \dots, T\}$. When $t = 0$, $x_t$ is a clean image. When $t = T$, $x_t$ is pure noise. For $t \in \{1, \dots, T - 1 \}$, $x_t$ should be a linear combination of the 
+            clean image and noise. The derivations for $\beta$, $\alpha_t$, and $\overline{\alpha}_t$ can be found in the <a href="https://arxiv.org/pdf/2006.11239">DDPM paper</a>. For our use cases, we can set $T = 300$ since our dataset is simple. 
+        </p>
+        <p>Because the variance of $x_t$ varies with $t$, we cannot simply feed $x_t$ into our UNet. We need to condition our input on $t$ by adding fully connected blocks to our UNet. Below is an updated diagram of our UNet architecture.</p>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/conditional_unet_diagram.png" alt="">
+                        <p>Conditional UNet Architecture</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            To train the model, we pick a random image from the training set, a random $t$, and train the denoiser to predict the noise in $x_t$. It follows the algorithm below.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/alg1.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            For training, we will train for $20$ epochs using a batch size of $128$. For the UNet, we will use a hidden dimension $D = 64$. We will also use the Adam optimizer with an initial learning rate of $1 \times 10^{-3}$, along with a exponential learning rate 
+            decay scheduler with $\gamma = 0.1^{\frac{1}{20}}$. Below is the training loss curve for the time-conditioned UNet model.
+        </p>
+        <h4>Figure 26: Training Loss Curve for Time-Conditioned UNet</h4>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/2.2/training_losses.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            We can also sample from our model, similar to previous sections. To sample, we use the following algorithm.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/alg2.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Below are the results from sampling the model after each epoch. Feel free to hover over the images to see a GIF of the sampling process!
+        </p>
+        <h4>Figure 27: Samples From Time-Conditioned UNet</h4>
+        <table style="width: 60%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch1">
+                            <img id="epoch1-image" src="./out/5B/2.3/epoch1.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 1</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch5">
+                            <img id="epoch5-image" src="./out/5B/2.3/epoch5.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 5</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch10">
+                            <img id="epoch10-image" src="./out/5B/2.3/epoch10.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 10</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch15">
+                            <img id="epoch15-image" src="./out/5B/2.3/epoch15.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 15</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch20">
+                            <img id="epoch20-image" src="./out/5B/2.3/epoch20.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 20</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Class Conditioning</h3>
+        <p>
+            To better control the image generation, we can condition our UNet on the class of digits $\{0, \dots, 9\}$. To represent each class, we will use a one-hot vector. We will also add two additional fully-connected blocks to feed in our class. Moreover, 
+            we will also implement dropout, where 10% of the time, we drop the class conditioning by setting the one-hot vector to 0. This is so that our UNet will still work even if it isn't conditioned on a class.
+        </p>
+        <p>
+            To train, we will use the following algorithm. The algorithm is similar to the training algorithm before, with the added process of computing the one-hot vector for each image.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/alg3.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            We will use the same training hyperparameters when training the time conditioned UNet. Below is a curve of the training losses.
+        </p>
+        <h4>Figure 28: Training Loss Curve for Class-Conditioned UNet</h4>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/2.4/training_losses.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            To sample, we will use the same technique from part A of this project. We saw before that class conditional results aren't good unless we use classifier-free guidance. Thus, we will use classifier-free guidance with $\gamma = 5$.
+        </p>
+        <table style="width: 75%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/5B/alg4.png" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Here are some results sampled after each epoch. Again, feel free to hover over the images to see a GIF of the sampling process!
+        </p>
+        <h4>Figure 29: Samples From Class-Conditioned UNet</h4>
+        <table style="width: 65%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch1c">
+                            <img id="epoch1c-image" src="./out/5B/2.5/epoch1.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 1</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch5c">
+                            <img id="epoch5c-image" src="./out/5B/2.5/epoch5.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 5</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch10c">
+                            <img id="epoch10c-image" src="./out/5B/2.5/epoch10.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 10</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch15c">
+                            <img id="epoch15c-image" src="./out/5B/2.5/epoch15.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 15</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="gif-container" id="epoch20c">
+                            <img id="epoch20c-image" src="./out/5B/2.5/epoch20.png" alt="Image" />
+                            <p style="margin-bottom: 0%; margin-top: 0%;">Epoch 20</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <hr>
     <div class="new_part">
         <h2>Project Insights</h2>
         <p>
-            I really enjoyed learning about how diffusion models work. My favorite part was being able to generate my own images from scratch, almost magically.
+            I really enjoyed learning about how diffusion models work. For project 5A, My favorite part was being able to generate my own images from scratch, and trying different prompts to see what works best! For project 5B, my favorite part 
+            was implementing the model myself and seeing how the images go from pure noise to a something clean at each and every timestep.
         </p>
+        <h2>Citations</h2>
+        <ul>
+            <li><a href="https://huggingface.co/docs/diffusers/api/pipelines/deepfloyd_if">DeepFloyd IF Model</a></li>
+            <li><a href="https://arxiv.org/pdf/2006.11239">Denoising Diffusion Probabilistic Models</a> by Ho et al.</li>
+            <li><a href="https://arxiv.org/pdf/2207.12598">Classifier-Free Diffusion Guidance</a> by Ho, J., & Salimans, T.</li>
+            <li><a href="http://graphics.cs.cmu.edu/projects/scene-completion/scene-completion.pdf">Scene Completion Using Millions of Photographs</a> by Hays, J., & Efros, A.</li>
+            <li><a href="https://arxiv.org/pdf/2201.09865">RePaint: Inpainting using Denoising Diffusion Probabilistic Models</a> by Lugmayr et al.</li>
+            <li><a href="https://arxiv.org/pdf/2311.17919">Visual Anagrams: Generating Multi-View Optical Illusions with Diffusion Models</a> by Geng et al.</li>
+            <li><a href="https://arxiv.org/pdf/2404.11615">Factorized Diffusion: Perceptual Illusions by Noise Decomposition</a> by Geng et al.</li>
+            <li>Website Template is from <a href="https://cs184.eecs.berkeley.edu/sp24">CS 184</a></li>
+        </ul>
     </div>
+    <script>
+        const epochs = [1, 5, 10, 15, 20]
+        for (const epoch of epochs) {
+            let gifContainer = document.getElementById(`epoch${epoch}`)
+            let gifImage = document.getElementById(`epoch${epoch}-image`)
+            gifContainer.addEventListener('mouseenter', () => {
+                gifImage.src = `./out/5B/2.3/epoch${epoch}.gif`;  // Change to GIF when hover starts
+            });            
+            gifContainer.addEventListener('mouseleave', () => {
+                gifImage.src = `./out/5B/2.3/epoch${epoch}.png`;  // Change back to static image when hover ends
+            });
+        }
+        for (const epoch of epochs) {
+            let gifContainerC = document.getElementById(`epoch${epoch}c`)
+            let gifImageC = document.getElementById(`epoch${epoch}c-image`)
+            gifContainerC.addEventListener('mouseenter', () => {
+                gifImageC.src = `./out/5B/2.5/epoch${epoch}.gif`;  // Change to GIF when hover starts
+            });            
+            gifContainerC.addEventListener('mouseleave', () => {
+                gifImageC.src = `./out/5B/2.5/epoch${epoch}.png`;  // Change back to static image when hover ends
+            });
+        }
+    </script>
 </body>
