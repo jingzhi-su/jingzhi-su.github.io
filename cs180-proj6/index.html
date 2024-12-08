@@ -1,0 +1,423 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1200px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  h2 {
+    text-align: center;
+  }
+  .new_part {
+    margin-top: 5%; 
+    margin-bottom: 5%;
+  }
+  table {
+    width: 100%; 
+    margin-left: auto; 
+    margin-right: auto;
+    margin-top: 3%; 
+    margin-bottom: 3%;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+  }
+  table {
+    table-layout: fixed;
+  }
+  td {
+    border: 2px solid #42404049;
+    border-radius: 15px;
+    padding: 2%;
+    vertical-align: middle;
+    & p {
+        text-align: center;
+        padding-top: 10px;
+    }
+  }
+  th {
+  padding-bottom: 1%;
+  text-align: center;
+  width:50%;
+  }
+  code {
+  background-color: #eee;
+  border-radius: 3px;
+  font-family: courier, monospace;
+  padding: 0 3px;
+    }
+</style>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript"
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<title>CS 180 Project 6</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+<body>
+    <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
+    <h2>Project 6: Image Quilting</h1>
+    <h2>Stephen Su</h2>
+    <div class="new_part">
+        <h2>Image Quilting Overview</h2>
+        <p>
+            In this project, we learn about different methods to synthesize texture and transfer texture from one object to another object. Texture synthesize is when we take a sample image of a texture and use it to generate a larger image from the texture. Texture transfer is giving an object the appearance of having the same texture as a sample while preserving its basic shape. The project follows the implementation of the paper <a href="https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/papers/efros-siggraph01.pdf">Image Quilting for Texture Synthesis and Transfer</a> by Efros and Freeman.
+        </p>
+    </div>
+    <div class="new_part">
+        <h2>Part 1: Randomly Sampled Texture</h2>
+        <p>
+            The easiest way to generate texture is by randomly sampling patches of small squares of size <code>patch_size</code> from our sample image. To randomly sample, we will use a seed of $0$. We then create an output image by tiling these square patches. For the following images, we will be using an output image of size $400 \times 400$ pixels and <code>patch_size = 40</code>. Below are some examples. 
+        </p>
+        <table style="width: 60%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/bricks_small.jpg" alt="">
+                        <p>Bricks</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/bricks_small_random_400_40.jpg" alt="">
+                        <p>Randomly Sampled</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/cracker.jpg" alt="">
+                        <p>Cracker</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/cracker_random_400_40.jpg" alt="">
+                        <p>Randomly Sampled</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/bread.jpg" alt="">
+                        <p>Bread</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/bread_random_400_40.jpg" alt="">
+                        <p>Randomly Sampled</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/text_small.jpg" alt="">
+                        <p>Text</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/text_small_random_400_40.jpg" alt="">
+                        <p>Randomly Sampled</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/popcorn.jpg" alt="">
+                        <p>Popcorn</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/popcorn_random_400_40.jpg" alt="">
+                        <p>Randomly Sampled</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/tree.jpg" alt="">
+                        <p>Tree</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/tree_random_400_40.jpg" alt="">
+                        <p>Randomly Sampled</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="new_part">
+        <h2>Part 2: Overlapping Patches</h2>
+        <p>
+            A better approach for texture synthesis is to instead have our sampled patches overlap with the existing patches. To determine which patch would best overlap with the existing patches, we introduce a sum of squared differences (SSD) cost function. Using the cost function, we iterate through every possible patch in the sample texture and compute the cost of the overlapping region between the sampled patch and the existing patches. We then select a random patch with low cost out of the <code>tol</code> lowest cost patches. For the following examples, we use an output image of size $400 \times 400$ pixels, <code>patch_size = 35</code>, <code>overlap = 9</code>, and <code>tol = 3</code>.
+        </p>
+        <table style="width: 60%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/bricks_small.jpg" alt="">
+                        <p>Bricks</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/bricks_small_simple_400_35_9_3.jpg" alt="">
+                        <p>Overlapping Patches</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/cracker.jpg" alt="">
+                        <p>Cracker</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/cracker_simple_400_35_9_3.jpg" alt="">
+                        <p>Overlapping Patches</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/bread.jpg" alt="">
+                        <p>Bread</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/bread_simple_400_35_9_3.jpg" alt="">
+                        <p>Overlapping Patches</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/text_small.jpg" alt="">
+                        <p>Text</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/text_small_simple_400_35_9_3.jpg" alt="">
+                        <p>Overlapping Patches</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/popcorn.jpg" alt="">
+                        <p>Popcorn</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/popcorn_simple_400_35_9_3.jpg" alt="">
+                        <p>Overlapping Patches</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/tree.jpg" alt="">
+                        <p>Tree</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/tree_simple_400_35_9_3.jpg" alt="">
+                        <p>Overlapping Patches</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Overall, the results here look much more coherent than the randomly sampled patches!
+        </p>
+    </div>
+    <div>
+        <h2>Part 3: Seam Finding</h2>
+        <p>
+            To further improve our results, we implement seam finding. Instead of overlapping newly sampled patches on top of existing patches, Seam Finding finds the minimum SSD cost of a contiguous path such that we are able to produce a clean combination of the two different patches. The shortest patch from one side to the other in the overlapping region will then be used to slice our existing patches as well as our sampled patch. After slicing, we can then stitch our patches together to generate a clean patch that fits with the existing patches. For the following examples, we use an output image of size $400 \times 400$ pixels, <code>patch_size = 33</code>, <code>overlap = 16</code>, and <code>tol = 3</code>. 
+        </p>
+        <table style="width: 60%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/bricks_small.jpg" alt="">
+                        <p>Bricks</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/bricks_small_cut_400_33_16_3.jpg" alt="">
+                        <p>Seam Finding</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/cracker.jpg" alt="">
+                        <p>Cracker</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/cracker_cut_400_33_16_3.jpg" alt="">
+                        <p>Seam Finding</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/bread.jpg" alt="">
+                        <p>Bread</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/bread_cut_400_33_16_3.jpg" alt="">
+                        <p>Seam Finding</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/text_small.jpg" alt="">
+                        <p>Text</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/text_small_cut_400_33_16_3.jpg" alt="">
+                        <p>Seam Finding</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/popcorn.jpg" alt="">
+                        <p>Popcorn</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/popcorn_cut_400_33_16_3.jpg" alt="">
+                        <p>Seam Finding</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/tree.jpg" alt="">
+                        <p>Tree</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/tree_cut_400_33_16_3.jpg" alt="">
+                        <p>Seam Finding</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            For some examples, there are clearly less visual artifacts when compared to the naive overlapping patch method!
+        </p>
+    </div>
+    <div>
+        <h2>Part 4: Texture Transfer</h2>
+        <p>
+            We can apply texture synthesis to transfer texture from one object to another. The result is an image with the same structure as a guidance image with the style of a sample texture image. We first need to define a correspondence map to compute the difference between the guidance image and the sample texture image. The correspondence map will use a blurred, black-and-white version of the guidance and sample texture image. We then need to change our cost function to account for the guidance image as well as the sample texture image. The new cost function is 
+            $$ \alpha \cdot SSD(x_t, x_{sample}) + (1 - \alpha) \cdot SSD(x_{guidance}, x_{sample})$$
+            where $x_t$ is our current patch to fill in and may contain overlaps from other patches, $x_{sample}$ is our sample texture image, and $x_{guidance}$ is our guidance image. We then proceed to use our Seam Finding method as usual. Below are some results.
+        </p>
+        <h4>Example 1: Sketch and Richard Feynman</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/sketch.jpg" alt="">
+                        <p>Texture</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/feynman.jpg" alt="">
+                        <p>Guidance Image</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/sketch_feynman_25_7_3_04.jpg" alt="">
+                        <p><code>patch_size=25, overlap=7, tol=3, alpha=0.4</code></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 2: T1 Faker</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/white_small.jpg" alt="">
+                        <p>Texture</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/faker.jpg" alt="">
+                        <p>Guidance Image</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/white_faker_15_5_3_03.jpg" alt="">
+                        <p><code>patch_size=15, overlap=5, tol=3, alpha=0.3</code></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 3: Fabric and Pepe the Frog</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/fabric.jpg" alt="">
+                        <p>Texture</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/pepe.jpg" alt="">
+                        <p>Guidance Image</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/fabric_pepe_15_5_3_03.jpg" alt="">
+                        <p><code>patch_size=15, overlap=5, tol=3, alpha=0.3</code></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h4>Example 4: Yarn and Squidward</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/image_quilting/texture.png" alt="">
+                        <p>Texture</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/squidward.jpg" alt="">
+                        <p>Guidance Image</p>
+                    </td>
+                    <td>
+                        <img src="./out/image_quilting/texture_squidward_15_5_3_03.jpg" alt="">
+                        <p><code>patch_size=15, overlap=5, tol=3, alpha=0.3</code></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="new_part">
+            <h2>Bells and Whistles</h2>
+            <p>
+                We can combine the methods of texture transfer learned here with the blending technqiues found in Project 2 to createa face-in-toast image. We first need to use the texture transfer methods to create a face using an image of a toast as our sample texture image. For the face, we will be using Professor Efros here as an example. Below are the results.
+            </p>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            <img src="./out/image_quilting/toast.jpg" alt="">
+                            <p>Toast Texture</p>
+                        </td>
+                        <td>
+                            <img src="./out/image_quilting/efros_small.jpg" alt="">
+                            <p>Professor Efros</p>
+                        </td>
+                        <td>
+                            <img src="./out/image_quilting/efros_toast.jpg" alt="">
+                            <p><code>patch_size=25, overlap=13, tol=3, alpha=0.3</code></p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>
+                We can then use Laplacian Pyramid Blending between our original toast image and the texture transfered toast image. Using the following mask for the Laplacian pyramid, this gives us
+            </p>
+            <table style="width: 66%;">
+                <tbody>
+                    <tr>
+                        <td>
+                            <img src="./out/image_quilting/mask.jpg" alt="">
+                            <p>Mask</p>
+                        </td>
+                        <td>
+                            <img src="./out/image_quilting/efros_toast.jpg" alt="">
+                            <p>Face-In-Toast!</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
