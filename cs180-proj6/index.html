@@ -71,12 +71,12 @@
 </head>
 <body>
     <h1 align="middle">CS 180: Introduction to Computational Photography and Computer Vision</h1>
-    <h2>Project 6: Image Quilting</h1>
+    <h2>Project 6: Image Quilting & Lightfield Camera</h1>
     <h2>Stephen Su</h2>
     <div class="new_part">
         <h2>Image Quilting Overview</h2>
         <p>
-            In this project, we learn about different methods to synthesize texture and transfer texture from one object to another object. Texture synthesize is when we take a sample image of a texture and use it to generate a larger image from the texture. Texture transfer is giving an object the appearance of having the same texture as a sample while preserving its basic shape. The project follows the implementation of the paper <a href="https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/papers/efros-siggraph01.pdf">Image Quilting for Texture Synthesis and Transfer</a> by Efros and Freeman.
+            In this project, we learn about different methods to synthesize texture and transfer texture from one object to another object. Texture synthesis is when we take a sample image of a texture and use it to generate a larger image from the texture. Texture transfer is giving an object the appearance of having the same texture as a sample while preserving its basic shape. The project follows the implementation of the paper <a href="https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/papers/efros-siggraph01.pdf">Image Quilting for Texture Synthesis and Transfer</a> by Efros and Freeman.
         </p>
     </div>
     <div class="new_part">
@@ -85,6 +85,12 @@
             The easiest way to generate texture is by randomly sampling patches of small squares of size <code>patch_size</code> from our sample image. To randomly sample, we will use a seed of $0$. We then create an output image by tiling these square patches. For the following images, we will be using an output image of size $400 \times 400$ pixels and <code>patch_size = 40</code>. Below are some examples. 
         </p>
         <table style="width: 60%;">
+            <th>
+                Sample
+            </th>
+            <th>
+                Output
+            </th>
             <tbody>
                 <tr>
                     <td>
@@ -155,6 +161,12 @@
             A better approach for texture synthesis is to instead have our sampled patches overlap with the existing patches. To determine which patch would best overlap with the existing patches, we introduce a sum of squared differences (SSD) cost function. Using the cost function, we iterate through every possible patch in the sample texture and compute the cost of the overlapping region between the sampled patch and the existing patches. We then select a random patch with low cost out of the <code>tol</code> lowest cost patches. For the following examples, we use an output image of size $400 \times 400$ pixels, <code>patch_size = 35</code>, <code>overlap = 9</code>, and <code>tol = 3</code>.
         </p>
         <table style="width: 60%;">
+            <th>
+                Sample
+            </th>
+            <th>
+                Output
+            </th>
             <tbody>
                 <tr>
                     <td>
@@ -228,6 +240,12 @@
             To further improve our results, we implement seam finding. Instead of overlapping newly sampled patches on top of existing patches, Seam Finding finds the minimum SSD cost of a contiguous path such that we are able to produce a clean combination of the two different patches. The shortest patch from one side to the other in the overlapping region will then be used to slice our existing patches as well as our sampled patch. After slicing, we can then stitch our patches together to generate a clean patch that fits with the existing patches. For the following examples, we use an output image of size $400 \times 400$ pixels, <code>patch_size = 33</code>, <code>overlap = 16</code>, and <code>tol = 3</code>. 
         </p>
         <table style="width: 60%;">
+            <th>
+                Sample
+            </th>
+            <th>
+                Output
+            </th>
             <tbody>
                 <tr>
                     <td>
@@ -303,7 +321,7 @@
             where $x_t$ is our current patch to fill in and may contain overlaps from other patches, $x_{sample}$ is our sample texture image, and $x_{guidance}$ is our guidance image. We then proceed to use our Seam Finding method as usual. Below are some results.
         </p>
         <h4>Example 1: Sketch and Richard Feynman</h4>
-        <table>
+        <table style="width: 75%;">
             <tbody>
                 <tr>
                     <td>
@@ -322,7 +340,7 @@
             </tbody>
         </table>
         <h4>Example 2: T1 Faker</h4>
-        <table>
+        <table style="width: 75%;">
             <tbody>
                 <tr>
                     <td>
@@ -341,7 +359,7 @@
             </tbody>
         </table>
         <h4>Example 3: Fabric and Pepe the Frog</h4>
-        <table>
+        <table style="width: 75%;">
             <tbody>
                 <tr>
                     <td>
@@ -360,7 +378,7 @@
             </tbody>
         </table>
         <h4>Example 4: Yarn and Squidward</h4>
-        <table>
+        <table style="width: 75%;">
             <tbody>
                 <tr>
                     <td>
@@ -381,9 +399,9 @@
         <div class="new_part">
             <h2>Bells and Whistles</h2>
             <p>
-                We can combine the methods of texture transfer learned here with the blending technqiues found in Project 2 to createa face-in-toast image. We first need to use the texture transfer methods to create a face using an image of a toast as our sample texture image. For the face, we will be using Professor Efros here as an example. Below are the results.
+                We can combine the methods of texture transfer learned here with the blending techniques found in Project 2 to create a face-in-toast image. We first need to use the texture transfer methods to create a face using an image of a toast as our sample texture image. For the face, we will be using Professor Efros here as an example. Below are the results.
             </p>
-            <table>
+            <table style="width: 75%;">
                 <tbody>
                     <tr>
                         <td>
@@ -402,9 +420,9 @@
                 </tbody>
             </table>
             <p>
-                We can then use Laplacian Pyramid Blending between our original toast image and the texture transfered toast image. Using the following mask for the Laplacian pyramid, this gives us
+                We can then use Laplacian Pyramid Blending between our original toast image and the texture transferred toast image. Using the following mask for the Laplacian pyramid, this gives us
             </p>
-            <table style="width: 66%;">
+            <table style="width: 50%;">
                 <tbody>
                     <tr>
                         <td>
@@ -419,5 +437,142 @@
                 </tbody>
             </table>
         </div>
+    </div>
+    <div class="new_part">
+        <h2>Project Insights</h2>
+        <p>I loved being able to apply the techniques in this project onto some of the images I found online. My favorite part was being able to produce the Efros Toast!</p>
+        <h2>Citations</h2>
+        <ul>
+            <li><a href="https://people.eecs.berkeley.edu/~efros/research/quilting/quilting.pdf">Image Quilting for Texture Synthesis and Transfer</a> by Efros A., & Freeman W.</li>
+        </ul>
+    </div>
+    <hr>
+    <div class="new_part">
+        <h2>Lightfield Camera Overview</h2>
+        <p>
+            This project was based off the paper <a href="https://graphics.stanford.edu/papers/lfcamera/lfcamera-150dpi.pdf">Light Field Photography with a Hand-held Plenoptic Camera</a> by Ng et al., where we capture multiple images over a plane orthogonal to the optical axis to achieve complex effects using simple operations such as shifting and averaging images. The goal of this project is to reproduce some of these effects using lightfield data. We will be using the Chess dataset found in the <a href="http://lightfield.stanford.edu/lfs.html">Stanford Lightfield Archive</a>.
+        </p>
+    </div>
+    <div class="new_part">
+        <h2>Part 1: Depth Refocusing</h2>
+        <p>
+            Objects far away from the camera don't vary their position significantly when the camera moves around while keeping the optical axis unchanged. Nearby objects, on the other hand, vary their position significantly across images. If we average all the images in the grid without any shifting, we will produce an image that is sharp around the far-away objects but blurry around the nearby objects. Here is what an averaged image would look like.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/averaged.png" alt="">
+                        <p>Averaged Image</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Similarly, if we shift each image, we can focus on objects at different depths. To determine the shift for each image, we first need to define a center point. Each image comes with a $(u, v)$ coordinate representing the image's position, as well a $(x, y)$ coordinate representing the image's position with regards to a (17, 17) grid. Our center image will be the image with a coordinate of $(x, y) = (8, 8)$, and we will denote that image's position as $(u_{center}, v_{center})$. To calculate the shift for each image at position $(u, v)$, we use the following formulas.
+            $$u_{shift} = (u - u_{center}) \cdot c$$
+            $$v_{shift} = (v - v_{center}) \cdot c$$
+            Here, $(u_{shift}, v_{shift})$ represents the shift needed for the current image, and $c$ is a hyperparameter we adjust to manipulate the point of focus in the averaged image. Positive $c$ values means we are shifting the focus towards nearby objects, while negative $c$ values means we are shifting the focus towards objects far away. After we shift each image by a single $c$ value, we can then average each shifted image to change the depth. Below are some examples of the dataset averaged with various $c$ values.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/depth -0.5.png" alt="">
+                        <p>$c = -0.5$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/depth -0.1.png" alt="">
+                        <p>$c = -0.1$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/depth 0.0.png" alt="">
+                        <p>$c = 0.0$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/depth 0.1.png" alt="">
+                        <p>$c = 0.1$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/depth 0.5.png" alt="">
+                        <p>$c = 0.5$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Here is a GIF displaying the various $c$ values from $-0.5$ to $0.5$.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/depth gif fps 12.gif" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="new_part">
+        <h2>Part 2: Aperture Adjustment</h2>
+        <p>
+            The size of the aperture represents how much light is captured by the camera. In a sense, averaging a large number of images is similar to using a large aperture. With more data, we have more of the scene captured and more light coming in. On the other hand, averaging a smaller number of images is similar to using a smaller aperture, due to us capturing less of the scene and having less light coming in. We can simulate this change by selectively choosing which images to use in our averaging process.
+        </p>
+        <p>
+            To determine which images we will average, we will compute a distance $d$ for each image such that $d$ is the distance from $(u, v)$ to $(u_{center}, v_{center})$. We will only choose images such that they are within a certain radius $r$ from the center. Then, we will shift and average our selected images using the same process as the previous section, with $c = 0.2$. Below are some examples of various $r$ values used. 
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/aperture 10.png" alt="">
+                        <p> $r = 10$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/aperture 30.png" alt="">
+                        <p> $r = 30$</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/aperture 50.png" alt="">
+                        <p> $r = 50$</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            Here is a GIF of the various $r$ values used from $5$ to $70$.
+        </p>
+        <table style="width: 50%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <img src="./out/lightfield_camera/aperture gif fps 12.gif" alt="">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="new_part">
+        <h2>Project Insights</h2>
+        <p>
+            It was fun seeing how much of a camera we can simulate just based off data alone along with some shifting and averaging! My favorite part was learning more about how cameras worked and all the different terminologies throughout this project. 
+        </p>
+        <h2>Citations</h2>
+        <ul>
+            <li><a href="https://graphics.stanford.edu/papers/lfcamera/lfcamera-150dpi.pdf">Light Field Photography with a Hand-held Plenoptic Camera</a> by Ng et al.</li>
+            <li><a href="http://lightfield.stanford.edu/lfs.html">Stanford Light Field Archive</a></li>
+        </ul>
     </div>
 </body>
